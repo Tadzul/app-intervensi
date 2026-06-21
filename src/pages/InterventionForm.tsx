@@ -4,12 +4,13 @@ import { PUNCA_OPTIONS, PELAN_OPTIONS, Intervention } from '../types';
 import { CheckCircle2 } from 'lucide-react';
 
 export default function InterventionForm() {
-  const { teachers, subjects, interventions, studentsPBD = [], addIntervention } = useDataStore();
+  const { teachers, subjects, interventions, studentsPBD = [], addIntervention, pbdControl = { pbd1Open: true, pbd2Open: true } } = useDataStore();
   const [successMsg, setSuccessMsg] = useState(false);
 
   // Form State
   const [selectedTeacherId, setSelectedTeacherId] = useState('');
   const [selectedSubjectId, setSelectedSubjectId] = useState('');
+  const [filterPbdType, setFilterPbdType] = useState<'PBD1' | 'PBD2' | ''>('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   
   const [tp1, setTp1] = useState(0);
@@ -29,10 +30,17 @@ export default function InterventionForm() {
 
   const teacherSubjects = subjects.filter(s => {
     if (String(s.teacherId) !== String(selectedTeacherId)) return false;
+    
+    if (s.pbdType === 'PBD1' && !pbdControl.pbd1Open) return false;
+    if (s.pbdType === 'PBD2' && !pbdControl.pbd2Open) return false;
+    
+    if (filterPbdType && s.pbdType !== filterPbdType) return false;
+
     const hasIntervention = interventions.some(inv => 
       String(inv.teacherId) === String(s.teacherId) && 
       inv.kelas === s.kelas && 
-      inv.mataPelajaran === s.mataPelajaran
+      inv.mataPelajaran === s.mataPelajaran &&
+      inv.pbdType === s.pbdType
     );
     return !hasIntervention;
   });
@@ -42,18 +50,10 @@ export default function InterventionForm() {
   // Auto populate TP when subject selected
   React.useEffect(() => {
     if (selectedSubject) {
-      // Find all students for this class across PBD1 or PBD2? We probably want the latest or a combined? 
-      // The prompt does not specify which PBD to use. Let's use PBD2 if it exists, otherwise PBD1.
       const classStudents = studentsPBD.filter(s => s.kelas === selectedSubject.kelas);
       
       if (classStudents.length > 0) {
-        // Try PBD2 first, fallback to PBD1
-        let pbdToUse = 'PBD2';
-        let targetStudents = classStudents.filter(s => s.pbdType === 'PBD2');
-        if (targetStudents.length === 0) {
-          pbdToUse = 'PBD1';
-          targetStudents = classStudents.filter(s => s.pbdType === 'PBD1');
-        }
+        const targetStudents = classStudents.filter(s => s.pbdType === selectedSubject.pbdType);
 
         const subjName = selectedSubject.mataPelajaran;
         let cTp1 = 0, cTp2 = 0, cTp3 = 0, cTp4 = 0, cTp5 = 0, cTp6 = 0;
@@ -96,6 +96,7 @@ export default function InterventionForm() {
 
   const handleReset = () => {
     setSelectedTeacherId('');
+    setFilterPbdType('');
     setSelectedSubjectId('');
     setTp1(0); setTp2(0); setTp3(0); setTp4(0); setTp5(0); setTp6(0);
     setTajuk(''); setPunca([]); setPuncaLain(''); setIsu(''); setPelan(''); setPelanLain(''); setCatatan('');
@@ -112,6 +113,7 @@ export default function InterventionForm() {
       tahap: selectedSubject!.tahap,
       kelas: selectedSubject!.kelas,
       mataPelajaran: selectedSubject!.mataPelajaran,
+      pbdType: selectedSubject!.pbdType,
       tp1, tp2, tp3, tp4, tp5, tp6,
       tajukBelumDikuasai: tajuk,
       punca, puncaLain,
@@ -179,26 +181,44 @@ export default function InterventionForm() {
             </div>
           </div>
 
-          <div className="space-y-1.5 pt-2">
-            <label className="text-sm font-semibold text-slate-700">Kelas & Mata Pelajaran Di ajar</label>
-            <select 
-              required
-              disabled={!selectedTeacherId || (selectedTeacherId && teacherSubjects.length === 0)}
-              value={selectedSubjectId}
-              onChange={e => setSelectedSubjectId(e.target.value)}
-              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-gold-500 focus:bg-white transition-all disabled:bg-slate-100 disabled:text-slate-400"
-            >
-              <option value="">
-                {selectedTeacherId 
-                  ? (teacherSubjects.length > 0 ? '-- Pilih Kelas --' : '-- Semua kelas telah diisi --') 
-                  : '-- Pilih Guru Dahulu --'}
-              </option>
-              {teacherSubjects.map(s => (
-                <option key={s.id} value={s.id}>
-                  {s.kelas} - {s.mataPelajaran} ({s.tahap})
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+            <div className="space-y-1.5">
+              <label className="text-sm font-semibold text-slate-700">Sesi PBD</label>
+              <select 
+                value={filterPbdType}
+                onChange={e => {
+                  setFilterPbdType(e.target.value as any);
+                  setSelectedSubjectId('');
+                }}
+                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-gold-500 focus:bg-white transition-all"
+              >
+                <option value="">-- Semua Sesi --</option>
+                <option value="PBD1">PBD Pertengahan</option>
+                <option value="PBD2">PBD Akhir</option>
+              </select>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-sm font-semibold text-slate-700">Kelas & Mata Pelajaran Di ajar</label>
+              <select 
+                required
+                disabled={!selectedTeacherId || (selectedTeacherId && teacherSubjects.length === 0)}
+                value={selectedSubjectId}
+                onChange={e => setSelectedSubjectId(e.target.value)}
+                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-gold-500 focus:bg-white transition-all disabled:bg-slate-100 disabled:text-slate-400"
+              >
+                <option value="">
+                  {selectedTeacherId 
+                    ? (teacherSubjects.length > 0 ? '-- Pilih Kelas --' : '-- Tiada kelas / Sesi PBD ditutup --') 
+                    : '-- Pilih Guru Dahulu --'}
                 </option>
-              ))}
-            </select>
+                {teacherSubjects.map(s => (
+                  <option key={s.id} value={s.id}>
+                    {s.kelas} - {s.mataPelajaran} ({s.pbdType === 'PBD1' ? 'PBD Pertengahan' : 'PBD Akhir'})
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </section>
 

@@ -9,7 +9,7 @@ import SubjectAnalysis from './pages/SubjectAnalysis';
 import RootCauseAnalysis from './pages/RootCauseAnalysis';
 import Reports from './pages/Reports';
 import PrintAnalysis from './pages/PrintAnalysis';
-import AnalisisPBD from './pages/AnalisisPBD';
+import SystemSettings from './pages/SystemSettings';
 
 export default function App() {
   const store = useDataStoreValue();
@@ -25,7 +25,7 @@ export default function App() {
             <Route path="intervention-form" element={<InterventionForm />} />
             <Route path="subject-analysis" element={<SubjectAnalysis />} />
             <Route path="root-cause-analysis" element={<RootCauseAnalysis />} />
-            <Route path="pbd/:pbdId" element={<AnalisisPBD />} />
+            <Route path="system-settings" element={<SystemSettings />} />
             <Route path="reports" element={<Reports />} />
             <Route path="print-analysis" element={<PrintAnalysis />} />
           </Route>

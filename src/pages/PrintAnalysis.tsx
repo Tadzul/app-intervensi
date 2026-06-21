@@ -5,10 +5,15 @@ import { Printer } from 'lucide-react';
 export default function PrintAnalysis() {
   const { teachers, interventions } = useDataStore();
   const [selectedTeacherId, setSelectedTeacherId] = useState('');
+  const [filterPbdType, setFilterPbdType] = useState('');
 
   const filteredTeachers = selectedTeacherId 
     ? teachers.filter(t => String(t.id) === String(selectedTeacherId))
     : teachers;
+
+  const visibleInterventions = filterPbdType 
+    ? interventions.filter(i => i.pbdType === filterPbdType)
+    : interventions;
 
   const handlePrint = () => {
     window.print();
@@ -17,11 +22,23 @@ export default function PrintAnalysis() {
   return (
     <div className="max-w-[1200px] mx-auto space-y-6">
       <div className="no-print">
-        <h2 className="text-2xl font-bold tracking-tight text-slate-900">Analisis Versi Cetak</h2>
+        <h2 className="text-2xl font-bold tracking-tight text-slate-900">Intervensi Versi Cetak</h2>
         <p className="text-slate-500">Cetak analisis mengikut format rasmi borang pelaporan KPM.</p>
       </div>
 
       <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 no-print flex flex-col sm:flex-row items-end gap-4">
+        <div className="flex-1 w-full space-y-2">
+          <label className="text-sm font-semibold text-slate-700">Pilih Sesi PBD</label>
+          <select
+            value={filterPbdType}
+            onChange={(e) => setFilterPbdType(e.target.value)}
+            className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-gold-500 focus:border-gold-500"
+          >
+            <option value="">-- Semua Sesi PBD --</option>
+            <option value="PBD1">PBD Pertengahan</option>
+            <option value="PBD2">PBD Akhir</option>
+          </select>
+        </div>
         <div className="flex-1 w-full space-y-2">
           <label className="text-sm font-semibold text-slate-700">Pilih Guru (Kosongkan untuk cetak semua)</label>
           <select
@@ -45,7 +62,7 @@ export default function PrintAnalysis() {
 
       <div className="print-area space-y-16">
         {filteredTeachers.map(teacher => {
-          const teacherInterventions = interventions.filter(i => String(i.teacherId) === String(teacher.id));
+          const teacherInterventions = visibleInterventions.filter(i => String(i.teacherId) === String(teacher.id));
           
           if (teacherInterventions.length === 0) return null;
 
@@ -58,10 +75,10 @@ export default function PrintAnalysis() {
                   <tr className="border border-black bg-white">
                     <th className="border border-black p-2 text-center uppercase font-bold" style={{ width: '12%' }}>M/PELAJARAN</th>
                     <th className="border border-black p-2 text-center uppercase font-bold" style={{ width: '12%' }}>KELAS</th>
-                    <th colSpan={2} className="border border-black p-2 text-center uppercase font-bold" style={{ width: '8%' }}>PENCAPAIAN</th>
-                    <th className="border border-black p-2 text-center uppercase font-bold" style={{ width: '22%' }}>TAJUK BELUM<br/>DIKUASAI</th>
+                    <th colSpan={2} className="border border-black p-2 text-center uppercase font-bold" style={{ width: '12%' }}>PENCAPAIAN</th>
+                    <th className="border border-black p-2 text-center uppercase font-bold" style={{ width: '20%' }}>TAJUK BELUM<br/>DIKUASAI</th>
                     <th className="border border-black p-2 text-center uppercase font-bold" style={{ width: '24%' }}>PUNCA/ISU</th>
-                    <th className="border border-black p-2 text-center uppercase font-bold" style={{ width: '22%' }}>PELAN INTERVENSI<br/>(TINDAKAN)</th>
+                    <th className="border border-black p-2 text-center uppercase font-bold" style={{ width: '20%' }}>PELAN INTERVENSI<br/>(TINDAKAN)</th>
                   </tr>
                 </thead>
                 {teacherInterventions.map((inv) => {
@@ -121,7 +138,7 @@ export default function PrintAnalysis() {
           );
         })}
 
-        {filteredTeachers.every(t => interventions.filter(i => String(i.teacherId) === String(t.id)).length === 0) && (
+        {filteredTeachers.every(t => visibleInterventions.filter(i => String(i.teacherId) === String(t.id)).length === 0) && (
           <div className="py-12 text-center text-slate-500 italic border-2 border-dashed border-slate-300 rounded-xl no-print">
             Tiada rekod intervensi dijumpai untuk paparan cetak.
           </div>

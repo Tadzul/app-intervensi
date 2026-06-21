@@ -10,6 +10,7 @@ export default function Reports({ printMode = false }: { printMode?: boolean }) 
   const [filterTeacher, setFilterTeacher] = useState('');
   const [filterClass, setFilterClass] = useState('');
   const [filterSubject, setFilterSubject] = useState('');
+  const [filterPbdType, setFilterPbdType] = useState('');
 
   const filteredInterventions = useMemo(() => {
     return interventions.filter(inv => {
@@ -25,10 +26,11 @@ export default function Reports({ printMode = false }: { printMode?: boolean }) 
       const matchesTeacher = !filterTeacher || String(inv.teacherId) === String(filterTeacher);
       const matchesClass = !filterClass || inv.kelas === filterClass;
       const matchesSubject = !filterSubject || inv.mataPelajaran === filterSubject;
+      const matchesPbd = !filterPbdType || inv.pbdType === filterPbdType;
 
-      return matchesSearch && matchesTeacher && matchesClass && matchesSubject;
+      return matchesSearch && matchesTeacher && matchesClass && matchesSubject && matchesPbd;
     });
-  }, [interventions, teachers, searchTerm, filterTeacher, filterClass, filterSubject]);
+  }, [interventions, teachers, searchTerm, filterTeacher, filterClass, filterSubject, filterPbdType]);
 
   const uniqueClasses = Array.from(new Set(subjects.map(s => s.kelas))).sort();
   const uniqueSubjects = Array.from(new Set(subjects.map(s => s.mataPelajaran))).sort();
@@ -99,7 +101,7 @@ export default function Reports({ printMode = false }: { printMode?: boolean }) 
 
       {!printMode && (
         <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-100 no-print transition-all hover:shadow-lg">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-5 mb-8">
             <div className="relative">
               <Search className="absolute left-3.5 top-3 h-5 w-5 text-slate-400" />
               <input
@@ -110,6 +112,16 @@ export default function Reports({ printMode = false }: { printMode?: boolean }) 
                 className="pl-10 w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-gold-500 focus:bg-white transition-all shadow-sm"
               />
             </div>
+
+            <select
+              value={filterPbdType}
+              onChange={(e) => setFilterPbdType(e.target.value)}
+              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-gold-500 focus:bg-white transition-all shadow-sm cursor-pointer"
+            >
+              <option value="">Semua Sesi PBD</option>
+              <option value="PBD1">PBD Pertengahan</option>
+              <option value="PBD2">PBD Akhir</option>
+            </select>
             
             <select
               value={filterTeacher}

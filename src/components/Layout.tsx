@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
-import { LayoutDashboard, Users, FileEdit, BarChart2, AlertCircle, FileText, Printer, Menu, LogIn, LogOut, X, Loader2 } from 'lucide-react';
+import { LayoutDashboard, Users, FileEdit, BarChart2, AlertCircle, FileText, Printer, Menu, LogIn, LogOut, X, Loader2, Settings } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useDataStore } from '../store/useDataStore';
 
@@ -30,12 +30,11 @@ export default function Layout() {
     { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { to: '/teacher-registration', label: 'Pendaftaran Guru', icon: Users },
     { to: '/intervention-form', label: 'Borang Intervensi', icon: FileEdit },
-    { to: '/subject-analysis', label: 'Analisis Mata Pelajaran', icon: BarChart2 },
     { to: '/root-cause-analysis', label: 'Analisis Punca & Isu', icon: AlertCircle },
-    { to: '/pbd/1', label: 'Analisis PBD 1', icon: FileText },
-    { to: '/pbd/2', label: 'Analisis PBD 2', icon: FileText },
     { to: '/reports', label: 'Laporan', icon: FileText },
-    { to: '/print-analysis', label: 'Analisis Versi Cetak', icon: Printer },
+    { to: '/print-analysis', label: 'Intervensi Versi Cetak', icon: Printer },
+    { to: '/subject-analysis', label: 'Analisis Mata Pelajaran', icon: BarChart2 },
+    { to: '/system-settings', label: 'Tetapan Sistem', icon: Settings },
   ];
 
   const currentDate = new Intl.DateTimeFormat('ms-MY', {
@@ -57,13 +56,13 @@ export default function Layout() {
 
       {/* Sidebar */}
       <aside className={cn(
-        "fixed inset-y-0 left-0 z-30 w-64 bg-blue-950 text-slate-300 transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 no-print shadow-xl",
+        "fixed inset-y-0 left-0 z-30 w-64 bg-blue-950 text-slate-300 transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 no-print shadow-xl flex flex-col",
         sidebarOpen ? "translate-x-0" : "-translate-x-full"
       )}>
-        <div className="h-20 flex items-center px-6 bg-blue-950/50 border-b border-blue-900/50 font-bold text-2xl text-gold-400 tracking-wider shadow-sm">
+        <div className="h-20 flex items-center px-6 bg-blue-950/50 border-b border-blue-900/50 font-bold text-2xl text-gold-400 tracking-wider shadow-sm shrink-0">
           SAIAS
         </div>
-        <div className="p-4">
+        <div className="p-4 pb-20 flex-1 overflow-y-auto">
           <p className="text-xs text-blue-300/70 uppercase font-bold tracking-wider mb-4 px-2">Menu Utama</p>
           <nav className="space-y-1.5">
             {navItems.map((item) => (

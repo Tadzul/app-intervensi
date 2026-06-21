@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useDataStore } from '../store/useDataStore';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 
@@ -6,12 +6,18 @@ const COLORS = ['#0f172a', '#1e293b', '#334155', '#475569', '#64748b', '#94a3b8'
 
 export default function RootCauseAnalysis() {
   const { interventions } = useDataStore();
+  const [filterPbdType, setFilterPbdType] = useState<string>('');
+
+  const filteredInterventions = useMemo(() => {
+    if (!filterPbdType) return interventions;
+    return interventions.filter(i => i.pbdType === filterPbdType);
+  }, [interventions, filterPbdType]);
 
   const causesData = useMemo(() => {
     const causes: Record<string, number> = {};
     let total = 0;
 
-    interventions.forEach(inv => {
+    filteredInterventions.forEach(inv => {
       inv.punca.forEach(p => {
         causes[p] = (causes[p] || 0) + 1;
         total++;
@@ -26,13 +32,26 @@ export default function RootCauseAnalysis() {
       .map(([name, value]) => ({ name, value }))
       .sort((a, b) => b.value - a.value)
       .slice(0, 10); // Top 10
-  }, [interventions]);
+  }, [filteredInterventions]);
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
       <div>
         <h2 className="text-2xl font-bold tracking-tight text-slate-900">Analisis Punca & Isu</h2>
         <p className="text-slate-500">Menganalisis punca utama kelemahan murid.</p>
+      </div>
+
+      <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center space-x-4 max-w-sm">
+        <label className="text-sm font-semibold text-slate-700 whitespace-nowrap">Sesi PBD:</label>
+        <select 
+          value={filterPbdType}
+          onChange={e => setFilterPbdType(e.target.value)}
+          className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-gold-500 transition-all font-medium text-slate-800"
+        >
+          <option value="">Semua Sesi</option>
+          <option value="PBD1">PBD Pertengahan</option>
+          <option value="PBD2">PBD Akhir</option>
+        </select>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -76,8 +95,8 @@ export default function RootCauseAnalysis() {
         <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-100 transition-all duration-300 hover:shadow-lg">
           <h3 className="text-lg font-bold text-slate-800 mb-6 border-b border-slate-100 pb-4">Isu Utama yang Direkodkan</h3>
           <div className="space-y-4 max-h-[400px] overflow-y-auto pr-3 custom-scrollbar">
-            {interventions.filter(i => i.isu).length > 0 ? (
-              interventions.filter(i => i.isu).map((inv) => (
+            {filteredInterventions.filter(i => i.isu).length > 0 ? (
+              filteredInterventions.filter(i => i.isu).map((inv) => (
                 <div key={inv.id} className="p-5 bg-gradient-to-br from-slate-50 to-white rounded-xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
                   <div className="flex justify-between items-start mb-3">
                     <span className="text-xs font-bold px-3 py-1.5 bg-gold-400/20 text-yellow-800 rounded-full border border-gold-400/30">

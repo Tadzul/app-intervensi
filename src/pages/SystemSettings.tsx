@@ -1,16 +1,13 @@
 import React, { useState } from 'react';
-import { useParams } from 'react-router-dom';
 import * as XLSX from 'xlsx';
 import { useDataStore } from '../store/useDataStore';
 import { StudentPBD, TAHAP1_CLASSES, TAHAP2_CLASSES, TAHAP1_SUBJECTS, TAHAP2_SUBJECTS } from '../types';
-import { Upload, X, Trash2, Trophy, ArrowDown } from 'lucide-react';
+import { Upload, X, Trash2, Trophy, ArrowDown, Database } from 'lucide-react';
 
-export default function AnalisisPBD() {
-  const { pbdId } = useParams();
-  const pbdType = pbdId === '1' ? 'PBD1' : 'PBD2';
-  
-  const { studentsPBD = [], uploadPBDData, deletePBDClass, isAdmin } = useDataStore();
+export default function SystemSettings() {
+  const { studentsPBD = [], uploadPBDData, deletePBDClass, isAdmin, pbdControl = { pbd1Open: true, pbd2Open: true }, updatePbdControl } = useDataStore();
   const [activeTahap, setActiveTahap] = useState<'Tahap 1' | 'Tahap 2'>('Tahap 1');
+  const [pbdType, setPbdType] = useState<'PBD1' | 'PBD2'>('PBD1');
   
   const classes = activeTahap === 'Tahap 1' ? TAHAP1_CLASSES : TAHAP2_CLASSES;
   const subjects = activeTahap === 'Tahap 1' ? TAHAP1_SUBJECTS : TAHAP2_SUBJECTS;
@@ -25,6 +22,9 @@ export default function AnalisisPBD() {
 
   const existingData = studentsPBD.filter(s => s.pbdType === pbdType && s.kelas === selectedClass);
   const isDataUploaded = existingData.length > 0;
+
+  const togglePbd1 = () => updatePbdControl({ ...pbdControl, pbd1Open: !pbdControl.pbd1Open });
+  const togglePbd2 = () => updatePbdControl({ ...pbdControl, pbd2Open: !pbdControl.pbd2Open });
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -137,9 +137,68 @@ export default function AnalisisPBD() {
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 pb-12">
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight text-slate-900">Analisis PBD {pbdId}</h2>
-        <p className="text-slate-500">Muat naik dan analisis markah Tahap Penguasaan (TP) mengikut kelas.</p>
+      <div className="flex items-center gap-4 border-b border-slate-200 pb-6 mb-8">
+        <div className="w-12 h-12 bg-blue-100 text-blue-700 rounded-xl flex items-center justify-center">
+          <Database className="w-6 h-6" />
+        </div>
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight text-slate-900">Tetapan Sistem</h2>
+          <p className="text-slate-500">Muat naik dan urus pangkalan data markah Tahap Penguasaan (TP) mengikut sesi PBD.</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+          <label className="block text-sm font-bold text-slate-700 mb-2">Pilih Sesi PBD Untuk Dimuat Naik</label>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              onClick={() => setPbdType('PBD1')}
+              className={`py-3 px-4 rounded-xl text-sm font-bold transition-all ${
+                pbdType === 'PBD1' 
+                  ? 'bg-blue-600 text-white shadow-md' 
+                  : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200'
+              }`}
+            >
+              PBD Pertengahan
+            </button>
+            <button
+              onClick={() => setPbdType('PBD2')}
+              className={`py-3 px-4 rounded-xl text-sm font-bold transition-all ${
+                pbdType === 'PBD2' 
+                  ? 'bg-blue-600 text-white shadow-md' 
+                  : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200'
+              }`}
+            >
+              PBD Akhir
+            </button>
+          </div>
+        </div>
+
+        {isAdmin && (
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+            <label className="block text-sm font-bold text-slate-700 mb-4">Kawalan Sistem Pengisian (Borang Intervensi)</label>
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center justify-between bg-slate-50 p-3 rounded-xl border border-slate-100">
+                <span className="text-sm font-semibold text-slate-700">PBD Pertengahan</span>
+                <button
+                  onClick={togglePbd1}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${pbdControl.pbd1Open ? 'bg-emerald-500' : 'bg-slate-300'}`}
+                >
+                  <span className={`${pbdControl.pbd1Open ? 'translate-x-6' : 'translate-x-1'} inline-block h-4 w-4 transform rounded-full bg-white transition-transform`} />
+                </button>
+              </div>
+              <div className="flex items-center justify-between bg-slate-50 p-3 rounded-xl border border-slate-100">
+                <span className="text-sm font-semibold text-slate-700">PBD Akhir</span>
+                <button
+                  onClick={togglePbd2}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${pbdControl.pbd2Open ? 'bg-emerald-500' : 'bg-slate-300'}`}
+                >
+                  <span className={`${pbdControl.pbd2Open ? 'translate-x-6' : 'translate-x-1'} inline-block h-4 w-4 transform rounded-full bg-white transition-transform`} />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Tabs */}

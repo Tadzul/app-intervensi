@@ -7,6 +7,7 @@ interface AppState {
   subjects: TeacherSubject[];
   interventions: Intervention[];
   studentsPBD: StudentPBD[];
+  pbdControl: { pbd1Open: boolean; pbd2Open: boolean };
   isAdmin: boolean;
   isLoadingData: boolean;
   loginAdmin: (user: string, pass: string) => boolean;
@@ -21,6 +22,7 @@ interface AppState {
   deleteIntervention: (id: string) => void;
   uploadPBDData: (data: StudentPBD[]) => void;
   deletePBDClass: (pbdType: 'PBD1' | 'PBD2', kelas: string) => void;
+  updatePbdControl: (control: { pbd1Open: boolean; pbd2Open: boolean }) => void;
 }
 
 const STORAGE_KEY = 'saias_data';
@@ -36,6 +38,7 @@ const getInitialState = () => {
         subjects: parsed.subjects || [],
         interventions: parsed.interventions || [],
         studentsPBD: parsed.studentsPBD || [],
+        pbdControl: parsed.pbdControl || { pbd1Open: true, pbd2Open: true },
       };
     } catch (e) {
       console.error("Error parsing stored data", e);
@@ -46,6 +49,7 @@ const getInitialState = () => {
     subjects: [],
     interventions: [],
     studentsPBD: [],
+    pbdControl: { pbd1Open: true, pbd2Open: true },
   };
 };
 
@@ -55,6 +59,7 @@ export const useDataStoreValue = () => {
     subjects: TeacherSubject[];
     interventions: Intervention[];
     studentsPBD: StudentPBD[];
+    pbdControl: { pbd1Open: boolean; pbd2Open: boolean };
   }>(getInitialState);
   
   const [isLoadingData, setIsLoadingData] = useState(true);
@@ -74,6 +79,7 @@ export const useDataStoreValue = () => {
             // Priority given to remote data, but for resilience if remote fails (returns empty),
             // you could conditionally merge. Here we overwrite with remote if fetched.
             const updated = {
+               ...prev,
                teachers: remoteData.teachers.length > 0 ? remoteData.teachers : (prev.teachers || []),
                subjects: remoteData.subjects.length > 0 ? remoteData.subjects : (prev.subjects || []),
                interventions: remoteData.interventions.length > 0 ? remoteData.interventions : (prev.interventions || []),
@@ -210,6 +216,14 @@ export const useDataStoreValue = () => {
     postSheetData('deleteClassPBD', 'PBD_Data', { pbdType, kelas });
   }, []);
 
+  const updatePbdControl = useCallback((control: { pbd1Open: boolean; pbd2Open: boolean }) => {
+    setData(prev => ({ ...prev, pbdControl: control }));
+    // Note: Assuming there is a 'saveControlSettings' action or similar in GAS. 
+    // Wait, GAS backend may not have this, so it will only persist locally if offline.
+    // If we wanted remote persistence, we'd need another sheet or something. 
+    // For now logging it locally / updating state is the instruction.
+  }, []);
+
   return {
     ...data,
     isAdmin,
@@ -225,7 +239,8 @@ export const useDataStoreValue = () => {
     updateIntervention,
     deleteIntervention,
     uploadPBDData,
-    deletePBDClass
+    deletePBDClass,
+    updatePbdControl
   };
 };
 

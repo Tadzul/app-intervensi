@@ -19,6 +19,15 @@ const SUBJECTS = [
 
 const TEACHER_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQlI0JjpoVeIRm94wjOh3G_0zn-2lyZqFJ5x96O73YBpIejb6gcgPmCxjBEiY6BnUINmU71VgMlFfbn/pub?gid=1353344496&single=true&output=csv";
 
+const CARD_THEMES = [
+  { wrapper: "border-blue-100 hover:border-blue-300", header: "bg-gradient-to-r from-blue-50 to-white border-b-blue-100", title: "text-blue-900", body: "bg-blue-50/40" },
+  { wrapper: "border-emerald-100 hover:border-emerald-300", header: "bg-gradient-to-r from-emerald-50 to-white border-b-emerald-100", title: "text-emerald-900", body: "bg-emerald-50/40" },
+  { wrapper: "border-purple-100 hover:border-purple-300", header: "bg-gradient-to-r from-purple-50 to-white border-b-purple-100", title: "text-purple-900", body: "bg-purple-50/40" },
+  { wrapper: "border-amber-100 hover:border-amber-300", header: "bg-gradient-to-r from-amber-50 to-white border-b-amber-100", title: "text-amber-900", body: "bg-amber-50/40" },
+  { wrapper: "border-rose-100 hover:border-rose-300", header: "bg-gradient-to-r from-rose-50 to-white border-b-rose-100", title: "text-rose-900", body: "bg-rose-50/40" },
+  { wrapper: "border-indigo-100 hover:border-indigo-300", header: "bg-gradient-to-r from-indigo-50 to-white border-b-indigo-100", title: "text-indigo-900", body: "bg-indigo-50/40" }
+];
+
 export default function TeacherRegistration() {
   const { teachers, subjects, addTeacher, updateTeacher, deleteTeacher, addSubject, deleteSubject, isAdmin } = useDataStore();
   const [editingTeacherId, setEditingTeacherId] = useState<string | null>(null);
@@ -30,6 +39,7 @@ export default function TeacherRegistration() {
   const [sTahap, setSTahap] = useState('Tahap 1');
   const [sKelas, setSKelas] = useState('');
   const [sMatapel, setSMatapel] = useState('');
+  const [sPbdType, setSPbdType] = useState<'PBD1' | 'PBD2'>('PBD1');
 
   const [teacherList, setTeacherList] = useState<string[]>([]);
   const [isFetchingTeachers, setIsFetchingTeachers] = useState(false);
@@ -55,10 +65,7 @@ export default function TeacherRegistration() {
       try {
         const res = await fetch(TEACHER_CSV_URL);
         const text = await res.text();
-        // Assuming CSV is a single column or first column contains names
-        // Splitting by newline and removing headers/empty rows
         const rows = text.split('\n').map(row => row.split(',')[0].trim()).filter(Boolean);
-        // Remove header if exists, usually "Name" or "Nama"
         if (rows.length > 0 && (rows[0].toLowerCase() === 'name' || rows[0].toLowerCase() === 'nama')) {
           rows.shift();
         }
@@ -84,12 +91,21 @@ export default function TeacherRegistration() {
 
   const handleAddSubject = (teacherId: string) => {
     if (!sKelas || !sMatapel) return;
+    
+    // Check if the same subject is registered for the same class and same PBD by any teacher
+    const exists = subjects.some(s => s.kelas === sKelas && s.mataPelajaran === sMatapel && s.pbdType === sPbdType);
+    if (exists) {
+      alert(`Mata pelajaran '${sMatapel}' untuk kelas '${sKelas}' pada sesi '${sPbdType === 'PBD1' ? 'PBD Pertengahan' : 'PBD Akhir'}' telah didaftarkan. Anda tidak boleh daftar subjek yang sama dalam satu kelas untuk sesi yang sama.`);
+      return;
+    }
+
     addSubject({
       id: Date.now().toString(),
       teacherId,
       tahap: sTahap,
       kelas: sKelas,
-      mataPelajaran: sMatapel
+      mataPelajaran: sMatapel,
+      pbdType: sPbdType
     });
     setSKelas('');
     setSMatapel('');
@@ -169,16 +185,17 @@ export default function TeacherRegistration() {
       </div>
 
       <div className="space-y-6">
-        {currentTeachers.map(teacher => {
+        {currentTeachers.map((teacher, index) => {
           const teacherSubjects = subjects.filter(s => String(s.teacherId) === String(teacher.id));
           const isEditing = String(editingTeacherId) === String(teacher.id);
+          const theme = CARD_THEMES[index % CARD_THEMES.length];
 
           return (
-            <div key={teacher.id} className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-visible transition-all duration-300 hover:shadow-md relative z-10">
+            <div key={teacher.id} className={`bg-white rounded-2xl shadow-sm border overflow-visible transition-all duration-300 hover:shadow-md relative z-10 ${theme.wrapper}`}>
               {/* Teacher Header */}
-              <div className="p-5 sm:p-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-r from-slate-50 to-white rounded-t-2xl">
+              <div className={`p-5 sm:p-6 border-b flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-t-2xl ${theme.header}`}>
                 <div>
-                  <h3 className="text-lg font-bold text-slate-900">{teacher.name}</h3>
+                  <h3 className={`text-lg font-bold ${theme.title}`}>{teacher.name}</h3>
                   <p className="text-sm text-slate-500">{teacher.email}</p>
                 </div>
                 {isAdmin && (
@@ -192,23 +209,25 @@ export default function TeacherRegistration() {
               </div>
 
               {/* Subjects List & Add form */}
-              <div className="p-4 sm:p-6 bg-slate-50/50 rounded-b-2xl">
+              <div className={`p-4 sm:p-6 rounded-b-2xl ${theme.body}`}>
                 <h4 className="text-sm font-semibold text-slate-700 mb-4">Senarai Kelas & Subjek</h4>
                 
                 {teacherSubjects.length > 0 ? (
-                  <div className="overflow-x-auto mb-6 rounded-lg border border-slate-200">
+                  <div className="overflow-x-auto mb-6 rounded-lg border border-slate-200/60 bg-white/50 backdrop-blur-sm shadow-sm opacity-90">
                     <table className="w-full text-sm text-left">
-                      <thead className="bg-slate-100 text-slate-600 uppercase">
+                      <thead className="bg-white/60 text-slate-600 uppercase border-b border-slate-200/60">
                         <tr>
+                          <th className="px-4 py-3 font-medium">Sesi</th>
                           <th className="px-4 py-3 font-medium">Tahap</th>
                           <th className="px-4 py-3 font-medium">Kelas</th>
                           <th className="px-4 py-3 font-medium">Mata Pelajaran</th>
                           <th className="px-4 py-3 font-medium text-right">Tindakan</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-200 bg-white">
+                      <tbody className="divide-y divide-slate-100 bg-white/80">
                         {teacherSubjects.map(sub => (
-                          <tr key={sub.id} className="hover:bg-slate-50">
+                          <tr key={sub.id} className="hover:bg-white transition-colors">
+                            <td className="px-4 py-3 font-medium text-blue-600">{sub.pbdType === 'PBD1' ? 'PBD Pertengahan' : 'PBD Akhir'}</td>
                             <td className="px-4 py-3">{sub.tahap}</td>
                             <td className="px-4 py-3 font-medium">{sub.kelas}</td>
                             <td className="px-4 py-3">{sub.mataPelajaran}</td>
@@ -232,7 +251,18 @@ export default function TeacherRegistration() {
                 )}
 
                 {/* Add Subject inline form */}
-                <div className="flex flex-col sm:flex-row gap-4 items-end p-5 mt-4 border border-slate-100 rounded-xl bg-slate-50/50 shadow-inner">
+                <div className="flex flex-col sm:flex-row gap-4 items-end p-5 mt-4 border border-slate-200/50 rounded-xl bg-white/40 shadow-sm backdrop-blur-sm">
+                  <div className="flex-1 w-full space-y-1.5">
+                    <label className="text-xs font-bold text-slate-700 uppercase tracking-wide">Sesi PBD</label>
+                    <select 
+                      value={sPbdType}
+                      onChange={e => setSPbdType(e.target.value as 'PBD1' | 'PBD2')}
+                      className="w-full px-4 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-gold-500 focus:border-gold-500 bg-white shadow-sm"
+                    >
+                      <option value="PBD1">PBD Pertengahan</option>
+                      <option value="PBD2">PBD Akhir</option>
+                    </select>
+                  </div>
                   <div className="flex-1 w-full space-y-1.5">
                     <label className="text-xs font-bold text-slate-700 uppercase tracking-wide">Tahap</label>
                     <select 

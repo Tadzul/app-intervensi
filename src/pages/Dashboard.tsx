@@ -1,15 +1,19 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useDataStore } from '../store/useDataStore';
 import { Users, BookOpen, FileText, CheckSquare } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 export default function Dashboard() {
   const { teachers, subjects, interventions } = useDataStore();
+  const [filterPbdType, setFilterPbdType] = useState('PBD1');
+
+  const filteredSubjects = subjects.filter(s => filterPbdType ? s.pbdType === filterPbdType : true);
+  const filteredInterventions = interventions.filter(inv => filterPbdType ? inv.pbdType === filterPbdType : true);
 
   const totalTeachers = teachers.length;
-  const totalSubjects = new Set(subjects.map(s => s.mataPelajaran)).size;
-  const totalInterventions = interventions.length;
-  const totalClasses = new Set(subjects.map(s => s.kelas)).size;
+  const totalSubjects = new Set(filteredSubjects.map(s => s.mataPelajaran)).size;
+  const totalInterventions = filteredInterventions.length;
+  const totalClasses = new Set(filteredSubjects.map(s => s.kelas)).size;
 
   const stats = [
     { label: 'Jumlah Guru', value: totalTeachers, icon: Users, color: 'from-blue-600 to-blue-400', shadow: 'shadow-blue-500/30' },
@@ -21,7 +25,7 @@ export default function Dashboard() {
   // Prepare chart data
   const tpData = [1, 2, 3, 4, 5, 6].map(tp => {
     let total = 0;
-    interventions.forEach(inv => {
+    filteredInterventions.forEach(inv => {
       total += Number(inv[`tp${tp}` as keyof typeof inv] || 0);
     });
     return { name: `TP${tp}`, jumlah: total };
@@ -29,9 +33,24 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight text-slate-900">Dashboard</h2>
-        <p className="text-slate-500">Ringkasan analisis intervensi akademik secara keseluruhan.</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight text-slate-900">Dashboard</h2>
+          <p className="text-slate-500">Ringkasan analisis intervensi akademik secara keseluruhan.</p>
+        </div>
+        
+        <div className="bg-white p-3 rounded-xl shadow-sm border border-slate-200 flex items-center space-x-3">
+          <label className="text-sm font-semibold text-slate-700 whitespace-nowrap">Sesi PBD:</label>
+          <select 
+            value={filterPbdType}
+            onChange={e => setFilterPbdType(e.target.value)}
+            className="w-full sm:w-auto px-4 py-2 border border-slate-300 rounded-lg text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-gold-500 transition-all font-medium text-slate-800"
+          >
+            <option value="">Semua Sesi</option>
+            <option value="PBD1">PBD Pertengahan</option>
+            <option value="PBD2">PBD Akhir</option>
+          </select>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
