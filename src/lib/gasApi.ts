@@ -1,6 +1,6 @@
 import { Teacher, TeacherSubject, Intervention } from '../types';
 
-export const GAS_URL = import.meta.env.VITE_GAS_WEB_APP_URL || "https://script.google.com/macros/s/AKfycbwjk11mjN8n52naA2MSjDQGjdEjG6WQTokZXh-9ivQ5Lry3Sm-qC51eM_it6VcxkNKW/exec";
+export const GAS_URL = import.meta.env.VITE_GAS_WEB_APP_URL || "https://script.google.com/macros/s/AKfycbx-_zGV8XwFiW6jiiBUYO5q4-ZLA1aVyuRhSMcu77LBcZkmOxRjE0Z-XBssaHs_tzxL/exec";
 
 export async function fetchSheetData(sheetName: string) {
   if (!GAS_URL) return [];
@@ -101,7 +101,8 @@ export async function loadInitialData(onProgress?: (progress: number, message: s
       // fallback
       if(inter.punca) punca = [inter.punca];
     }
-    return { ...inter, punca };
+    const pbdVal = inter.pbdType || inter.pbdtype || inter.PBDType || inter.PbdType || inter['Sesi PBD'] || 'PBD Pertengahan';
+    return { ...inter, punca, pbdType: pbdVal };
   });
 
   const pbdData = pbdRaw.map((pbd: any) => {
@@ -113,12 +114,21 @@ export async function loadInitialData(onProgress?: (progress: number, message: s
     } catch(e) {
       console.error('Failed parsing mataPelajaran mapping', e);
     }
-    return { ...pbd, mataPelajaran };
+    const pbdVal = pbd.pbdType || pbd.pbdtype || pbd.PBDType || pbd.PbdType || pbd['Sesi PBD'] || 'PBD Pertengahan';
+    return { ...pbd, mataPelajaran, pbdType: pbdVal };
+  });
+
+  const subjectsData = subjectsRaw.map((sub: any) => {
+    const pbdVal = sub.pbdType || sub.pbdtype || sub.PBDType || sub.PbdType || sub['Sesi PBD'] || 'PBD Pertengahan';
+    return {
+      ...sub,
+      pbdType: pbdVal
+    };
   });
 
   return {
     teachers: teachersRaw as Teacher[],
-    subjects: subjectsRaw as TeacherSubject[],
+    subjects: subjectsData as TeacherSubject[],
     interventions: interventionsData as Intervention[],
     studentsPBD: pbdData as any[]
   };

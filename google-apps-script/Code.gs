@@ -132,11 +132,20 @@ function addRow(sheetName, objectData) {
       headers.push('timestamp');
     }
     sheet.appendRow(headers);
+  } else {
+    // Tambah header baharu yang mungkin tertinggal dari versi lama
+    const currentHeadersLower = headers.map(h => String(h).toLowerCase());
+    const newKeys = Object.keys(objectData).filter(key => !currentHeadersLower.includes(key.toLowerCase()));
+    if (newKeys.length > 0) {
+      newKeys.forEach(k => headers.push(k));
+      sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+    }
   }
   
   // Mapping data baru ke kolum yang betul
   const newRow = headers.map(header => {
-    return objectData[header] !== undefined ? objectData[header] : "";
+    const objectKey = Object.keys(objectData).find(k => k.toLowerCase() === String(header).toLowerCase());
+    return objectKey ? objectData[objectKey] : "";
   });
 
   const timestampIndex = headers.findIndex(h => String(h).toLowerCase() === 'timestamp' || String(h).toLowerCase() === 'tarikh_masa');
@@ -156,12 +165,20 @@ function updateRow(sheetName, objectData) {
   const values = sheet.getDataRange().getValues();
   if (values.length <= 1) return objectData;
 
-  const headers = values[0];
+  let headers = values[0];
   const idIndex = headers.findIndex(h => String(h).toLowerCase() === 'id');
   if (idIndex === -1) throw new Error("Tiada kolum 'id' dijumpa dalam sheet " + sheetName);
 
   const targetId = objectData.id;
   if (!targetId) throw new Error("Data tidak mengandungi ID untuk kemaskini");
+
+  // Tambah header baharu yang mungkin tertinggal dari versi lama
+  const currentHeadersLower = headers.map(h => String(h).toLowerCase());
+  const newKeys = Object.keys(objectData).filter(key => !currentHeadersLower.includes(key.toLowerCase()));
+  if (newKeys.length > 0) {
+    newKeys.forEach(k => headers.push(k));
+    sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+  }
 
   for (let i = 1; i < values.length; i++) {
     if (String(values[i][idIndex]) === String(targetId)) {
@@ -169,7 +186,8 @@ function updateRow(sheetName, objectData) {
         if (header.toLowerCase() === 'timestamp' || header.toLowerCase() === 'tarikh_masa') {
            return new Date();
         }
-        return objectData[header] !== undefined ? objectData[header] : values[i][colIndex];
+        const objectKey = Object.keys(objectData).find(k => k.toLowerCase() === String(header).toLowerCase());
+        return objectKey ? objectData[objectKey] : (colIndex < values[i].length ? values[i][colIndex] : "");
       });
       // values array indices start from 0, sheet rows start from 1. Row 0 is header (row 1).
       sheet.getRange(i + 1, 1, 1, headers.length).setValues([updateRowValues]);
@@ -221,14 +239,23 @@ function addBatchRows(sheetName, arrayData) {
       headers.push('timestamp');
     }
     sheet.appendRow(headers);
+  } else {
+    // Tambah header baharu yang mungkin tertinggal dari versi lama
+    const currentHeadersLower = headers.map(h => String(h).toLowerCase());
+    const newKeys = Object.keys(arrayData[0]).filter(key => !currentHeadersLower.includes(key.toLowerCase()));
+    if (newKeys.length > 0) {
+      newKeys.forEach(k => headers.push(k));
+      sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+    }
   }
 
   const newRows = arrayData.map(objectData => {
     const newRow = headers.map(header => {
-      if(header.toLowerCase() === 'timestamp' || header.toLowerCase() === 'tarikh_masa') {
+      if(String(header).toLowerCase() === 'timestamp' || String(header).toLowerCase() === 'tarikh_masa') {
         return new Date();
       }
-      return objectData[header] !== undefined ? objectData[header] : "";
+      const objectKey = Object.keys(objectData).find(k => k.toLowerCase() === String(header).toLowerCase());
+      return objectKey ? objectData[objectKey] : "";
     });
     return newRow;
   });
