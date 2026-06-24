@@ -63,6 +63,8 @@ export const useDataStoreValue = () => {
   }>(getInitialState);
   
   const [isLoadingData, setIsLoadingData] = useState(true);
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const [loadingMessage, setLoadingMessage] = useState("Memulakan persediaan sistem...");
 
   const [isAdmin, setIsAdmin] = useState(() => {
     return sessionStorage.getItem('saias_is_admin') === 'true';
@@ -73,7 +75,12 @@ export const useDataStoreValue = () => {
     let mounted = true;
     (async () => {
       try {
-        const remoteData = await loadInitialData();
+        const remoteData = await loadInitialData((progress, message) => {
+          if (mounted) {
+            setLoadingProgress(progress);
+            setLoadingMessage(message);
+          }
+        });
         if (mounted) {
           setData(prev => {
             // Priority given to remote data, but for resilience if remote fails (returns empty),
@@ -228,6 +235,8 @@ export const useDataStoreValue = () => {
     ...data,
     isAdmin,
     isLoadingData,
+    loadingProgress,
+    loadingMessage,
     loginAdmin,
     logoutAdmin,
     addTeacher,

@@ -11,7 +11,7 @@ export default function Layout() {
   const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState('');
   
-  const { isAdmin, isLoadingData, loginAdmin, logoutAdmin } = useDataStore();
+  const { isAdmin, isLoadingData, loadingProgress, loadingMessage, loginAdmin, logoutAdmin } = useDataStore();
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -173,10 +173,29 @@ export default function Layout() {
         {/* Page Content */}
         <div className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8 bg-slate-50/50 flex flex-col relative">
           {isLoadingData && (
-            <div className="absolute inset-0 z-20 flex items-center justify-center bg-slate-50/80 backdrop-blur-sm">
-              <div className="flex flex-col items-center gap-2">
-                <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
-                <p className="text-sm font-medium text-slate-600">Menyegerak data...</p>
+            <div className="absolute inset-0 z-20 flex items-center justify-center bg-slate-50/90 backdrop-blur-md">
+              <div className="flex flex-col items-center gap-6 max-w-sm w-full px-6">
+                <div className="w-16 h-16 relative flex items-center justify-center bg-white rounded-2xl shadow-sm border border-slate-100">
+                  <div className="absolute inset-0 rounded-2xl border-[3px] border-slate-100"></div>
+                  <div className="absolute inset-0 rounded-2xl border-[3px] border-blue-600 border-t-transparent animate-spin"></div>
+                  <span className="text-blue-600 font-black text-sm absolute">{loadingProgress}%</span>
+                </div>
+                
+                <div className="w-full space-y-3">
+                  <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden shadow-inner">
+                    <div 
+                      className="h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded-full transition-all duration-500 ease-out relative"
+                      style={{ width: `${loadingProgress}%` }}
+                    >
+                      <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex flex-col items-center text-center space-y-1">
+                    <p className="text-sm font-bold text-blue-950 tracking-wide">Menyegerak Pangkalan Data</p>
+                    <p className="text-xs font-medium text-slate-500 animate-pulse">{loadingMessage}</p>
+                  </div>
+                </div>
               </div>
             </div>
           )}

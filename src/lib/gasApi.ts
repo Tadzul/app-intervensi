@@ -70,12 +70,24 @@ export async function postSheetData(action: 'add' | 'update' | 'delete' | 'addBa
 }
 
 // Function to fetch all database records initially
-export async function loadInitialData() {
+export async function loadInitialData(onProgress?: (progress: number, message: string) => void) {
+  let completed = 0;
+  const total = 4;
+
+  const handleProgress = (message: string) => {
+    completed++;
+    if (onProgress) {
+      onProgress(Math.round((completed / total) * 100), message);
+    }
+  };
+
+  if (onProgress) onProgress(5, "Memulakan sambungan ke pelayan...");
+
   const [teachersRaw, subjectsRaw, interventionsRaw, pbdRaw] = await Promise.all([
-    fetchSheetData('Teachers'),
-    fetchSheetData('Subjects'),
-    fetchSheetData('Interventions'),
-    fetchSheetData('PBD_Data')
+    fetchSheetData('Teachers').then(res => { handleProgress("Data Guru berjaya dimuat turun."); return res; }),
+    fetchSheetData('Subjects').then(res => { handleProgress("Data Mata Pelajaran berjaya dimuat turun."); return res; }),
+    fetchSheetData('Interventions').then(res => { handleProgress("Data Intervensi berjaya dimuat turun."); return res; }),
+    fetchSheetData('PBD_Data').then(res => { handleProgress("Data PBD berjaya dimuat turun."); return res; })
   ]);
 
   // Decode array fields
