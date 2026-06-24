@@ -191,9 +191,10 @@ export default function Layout() {
                     </div>
                   </div>
                   
-                  <div className="flex flex-col items-center text-center space-y-1">
-                    <p className="text-sm font-bold text-blue-950 tracking-wide">Menyegerak Pangkalan Data</p>
-                    <p className="text-xs font-medium text-slate-500 animate-pulse">{loadingMessage}</p>
+                  <div className="flex flex-col items-center text-center space-y-1.5">
+                    <p className="text-sm font-bold text-blue-950 tracking-wide">Sistem memproses data</p>
+                    <p className="text-xs font-bold text-blue-600">Sila tunggu sebentar..</p>
+                    <p className="text-xs font-medium text-slate-500 animate-pulse pt-1">{loadingMessage}</p>
                   </div>
                 </div>
               </div>
