@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
-import { LayoutDashboard, Users, FileEdit, BarChart2, AlertCircle, FileText, Printer, Menu, LogIn, LogOut, X, Loader2, Settings } from 'lucide-react';
+import { LayoutDashboard, Users, FileEdit, BarChart2, AlertCircle, FileText, Printer, Menu, LogIn, LogOut, X, Loader2, Settings, Award } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useDataStore } from '../store/useDataStore';
 
@@ -34,6 +34,8 @@ export default function Layout() {
     { to: '/reports', label: 'Laporan', icon: FileText },
     { to: '/print-analysis', label: 'Intervensi Versi Cetak', icon: Printer },
     { to: '/subject-analysis', label: 'Analisis Mata Pelajaran', icon: BarChart2 },
+    { to: '/student-analysis', label: 'Analisis Murid', icon: Users },
+    { to: '/top-students', label: 'Murid Pilihan', icon: Award },
     { to: '/system-settings', label: 'Tetapan Sistem', icon: Settings },
   ];
 

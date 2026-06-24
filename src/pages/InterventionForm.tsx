@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useDataStore } from '../store/useDataStore';
 import { PUNCA_OPTIONS, PELAN_OPTIONS, Intervention } from '../types';
-import { CheckCircle2 } from 'lucide-react';
+import { CheckCircle2, AlertCircle } from 'lucide-react';
 
 export default function InterventionForm() {
   const { teachers, subjects, interventions, studentsPBD = [], addIntervention, pbdControl = { pbd1Open: true, pbd2Open: true } } = useDataStore();
@@ -10,9 +10,9 @@ export default function InterventionForm() {
   // Form State
   const [selectedTeacherId, setSelectedTeacherId] = useState('');
   const [selectedSubjectId, setSelectedSubjectId] = useState('');
-  const [filterPbdType, setFilterPbdType] = useState<'PBD1' | 'PBD2' | ''>('');
+  const [filterPbdType, setFilterPbdType] = useState<'PBD Pertengahan' | 'PBD Akhir' | ''>('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-  
+
   const [tp1, setTp1] = useState(0);
   const [tp2, setTp2] = useState(0);
   const [tp3, setTp3] = useState(0);
@@ -31,8 +31,8 @@ export default function InterventionForm() {
   const teacherSubjects = subjects.filter(s => {
     if (String(s.teacherId) !== String(selectedTeacherId)) return false;
     
-    if (s.pbdType === 'PBD1' && !pbdControl.pbd1Open) return false;
-    if (s.pbdType === 'PBD2' && !pbdControl.pbd2Open) return false;
+    if (s.pbdType === 'PBD Pertengahan' && !pbdControl.pbd1Open) return false;
+    if (s.pbdType === 'PBD Akhir' && !pbdControl.pbd2Open) return false;
     
     if (filterPbdType && s.pbdType !== filterPbdType) return false;
 
@@ -131,6 +131,18 @@ export default function InterventionForm() {
     }, 2000);
   };
 
+  if (!pbdControl.pbd1Open && !pbdControl.pbd2Open) {
+    return (
+      <div className="max-w-4xl mx-auto pb-12 relative">
+        <div className="bg-red-50 text-red-600 p-10 rounded-2xl shadow-sm border border-red-100 flex flex-col items-center text-center mt-12 w-full animate-in fade-in slide-in-from-bottom-4">
+          <AlertCircle className="w-16 h-16 mb-4 text-red-500" />
+          <h2 className="text-2xl font-bold mb-2">Sistem Ditutup</h2>
+          <p className="text-red-700 font-medium">Borang pengisian data Intervensi PBD telah ditutup oleh pihak pentadbir pada masa ini.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-4xl mx-auto pb-12 relative">
       {successMsg && (
@@ -193,8 +205,8 @@ export default function InterventionForm() {
                 className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-gold-500 focus:bg-white transition-all"
               >
                 <option value="">-- Semua Sesi --</option>
-                <option value="PBD1">PBD Pertengahan</option>
-                <option value="PBD2">PBD Akhir</option>
+                {pbdControl.pbd1Open && <option value="PBD Pertengahan">PBD Pertengahan</option>}
+                {pbdControl.pbd2Open && <option value="PBD Akhir">PBD Akhir</option>}
               </select>
             </div>
 
@@ -214,7 +226,7 @@ export default function InterventionForm() {
                 </option>
                 {teacherSubjects.map(s => (
                   <option key={s.id} value={s.id}>
-                    {s.kelas} - {s.mataPelajaran} ({s.pbdType === 'PBD1' ? 'PBD Pertengahan' : 'PBD Akhir'})
+                    {s.kelas} - {s.mataPelajaran} ({s.pbdType === 'PBD Pertengahan' ? 'PBD Pertengahan' : 'PBD Akhir'})
                   </option>
                 ))}
               </select>

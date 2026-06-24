@@ -7,7 +7,7 @@ import { Upload, X, Trash2, Trophy, ArrowDown, Database } from 'lucide-react';
 export default function SystemSettings() {
   const { studentsPBD = [], uploadPBDData, deletePBDClass, isAdmin, pbdControl = { pbd1Open: true, pbd2Open: true }, updatePbdControl } = useDataStore();
   const [activeTahap, setActiveTahap] = useState<'Tahap 1' | 'Tahap 2'>('Tahap 1');
-  const [pbdType, setPbdType] = useState<'PBD1' | 'PBD2'>('PBD1');
+  const [pbdType, setPbdType] = useState<'PBD Pertengahan' | 'PBD Akhir'>('PBD Pertengahan');
   
   const classes = activeTahap === 'Tahap 1' ? TAHAP1_CLASSES : TAHAP2_CLASSES;
   const subjects = activeTahap === 'Tahap 1' ? TAHAP1_SUBJECTS : TAHAP2_SUBJECTS;
@@ -152,9 +152,9 @@ export default function SystemSettings() {
           <label className="block text-sm font-bold text-slate-700 mb-2">Pilih Sesi PBD Untuk Dimuat Naik</label>
           <div className="grid grid-cols-2 gap-2">
             <button
-              onClick={() => setPbdType('PBD1')}
+              onClick={() => setPbdType('PBD Pertengahan')}
               className={`py-3 px-4 rounded-xl text-sm font-bold transition-all ${
-                pbdType === 'PBD1' 
+                pbdType === 'PBD Pertengahan' 
                   ? 'bg-blue-600 text-white shadow-md' 
                   : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200'
               }`}
@@ -162,9 +162,9 @@ export default function SystemSettings() {
               PBD Pertengahan
             </button>
             <button
-              onClick={() => setPbdType('PBD2')}
+              onClick={() => setPbdType('PBD Akhir')}
               className={`py-3 px-4 rounded-xl text-sm font-bold transition-all ${
-                pbdType === 'PBD2' 
+                pbdType === 'PBD Akhir' 
                   ? 'bg-blue-600 text-white shadow-md' 
                   : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200'
               }`}

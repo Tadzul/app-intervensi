@@ -119,8 +119,8 @@ export default function Reports({ printMode = false }: { printMode?: boolean }) 
               className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-gold-500 focus:bg-white transition-all shadow-sm cursor-pointer"
             >
               <option value="">Semua Sesi PBD</option>
-              <option value="PBD1">PBD Pertengahan</option>
-              <option value="PBD2">PBD Akhir</option>
+              <option value="PBD Pertengahan">PBD Pertengahan</option>
+              <option value="PBD Akhir">PBD Akhir</option>
             </select>
             
             <select

@@ -35,8 +35,8 @@ export default function PrintAnalysis() {
             className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-gold-500 focus:border-gold-500"
           >
             <option value="">-- Semua Sesi PBD --</option>
-            <option value="PBD1">PBD Pertengahan</option>
-            <option value="PBD2">PBD Akhir</option>
+            <option value="PBD Pertengahan">PBD Pertengahan</option>
+            <option value="PBD Akhir">PBD Akhir</option>
           </select>
         </div>
         <div className="flex-1 w-full space-y-2">

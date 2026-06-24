@@ -5,7 +5,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 
 export default function Dashboard() {
   const { teachers, subjects, interventions } = useDataStore();
-  const [filterPbdType, setFilterPbdType] = useState('PBD1');
+  const [filterPbdType, setFilterPbdType] = useState('PBD Pertengahan');
 
   const filteredSubjects = subjects.filter(s => filterPbdType ? s.pbdType === filterPbdType : true);
   const filteredInterventions = interventions.filter(inv => filterPbdType ? inv.pbdType === filterPbdType : true);
@@ -47,8 +47,8 @@ export default function Dashboard() {
             className="w-full sm:w-auto px-4 py-2 border border-slate-300 rounded-lg text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-gold-500 transition-all font-medium text-slate-800"
           >
             <option value="">Semua Sesi</option>
-            <option value="PBD1">PBD Pertengahan</option>
-            <option value="PBD2">PBD Akhir</option>
+            <option value="PBD Pertengahan">PBD Pertengahan</option>
+            <option value="PBD Akhir">PBD Akhir</option>
           </select>
         </div>
       </div>

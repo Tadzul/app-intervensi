@@ -49,8 +49,8 @@ export default function RootCauseAnalysis() {
           className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-gold-500 transition-all font-medium text-slate-800"
         >
           <option value="">Semua Sesi</option>
-          <option value="PBD1">PBD Pertengahan</option>
-          <option value="PBD2">PBD Akhir</option>
+          <option value="PBD Pertengahan">PBD Pertengahan</option>
+          <option value="PBD Akhir">PBD Akhir</option>
         </select>
       </div>
 

@@ -10,7 +10,7 @@ export interface TeacherSubject {
   tahap: string;
   kelas: string;
   mataPelajaran: string;
-  pbdType: 'PBD1' | 'PBD2';
+  pbdType: 'PBD Pertengahan' | 'PBD Akhir';
 }
 
 export interface Intervention {
@@ -20,7 +20,7 @@ export interface Intervention {
   tahap: string;
   kelas: string;
   mataPelajaran: string;
-  pbdType: 'PBD1' | 'PBD2';
+  pbdType: 'PBD Pertengahan' | 'PBD Akhir';
   tp1: number;
   tp2: number;
   tp3: number;
@@ -38,7 +38,7 @@ export interface Intervention {
 
 export interface StudentPBD {
   id: string;
-  pbdType: 'PBD1' | 'PBD2';
+  pbdType: 'PBD Pertengahan' | 'PBD Akhir';
   tahap: string;
   kelas: string;
   nama: string;

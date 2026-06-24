@@ -39,7 +39,7 @@ export default function TeacherRegistration() {
   const [sTahap, setSTahap] = useState('Tahap 1');
   const [sKelas, setSKelas] = useState('');
   const [sMatapel, setSMatapel] = useState('');
-  const [sPbdType, setSPbdType] = useState<'PBD1' | 'PBD2'>('PBD1');
+  const [sPbdType, setSPbdType] = useState<'PBD Pertengahan' | 'PBD Akhir'>('PBD Pertengahan');
 
   const [teacherList, setTeacherList] = useState<string[]>([]);
   const [isFetchingTeachers, setIsFetchingTeachers] = useState(false);
@@ -95,7 +95,7 @@ export default function TeacherRegistration() {
     // Check if the same subject is registered for the same class and same PBD by any teacher
     const exists = subjects.some(s => s.kelas === sKelas && s.mataPelajaran === sMatapel && s.pbdType === sPbdType);
     if (exists) {
-      alert(`Mata pelajaran '${sMatapel}' untuk kelas '${sKelas}' pada sesi '${sPbdType === 'PBD1' ? 'PBD Pertengahan' : 'PBD Akhir'}' telah didaftarkan. Anda tidak boleh daftar subjek yang sama dalam satu kelas untuk sesi yang sama.`);
+      alert(`Mata pelajaran '${sMatapel}' untuk kelas '${sKelas}' pada sesi '${sPbdType}' telah didaftarkan. Anda tidak boleh daftar subjek yang sama dalam satu kelas untuk sesi yang sama.`);
       return;
     }
 
@@ -227,7 +227,7 @@ export default function TeacherRegistration() {
                       <tbody className="divide-y divide-slate-100 bg-white/80">
                         {teacherSubjects.map(sub => (
                           <tr key={sub.id} className="hover:bg-white transition-colors">
-                            <td className="px-4 py-3 font-medium text-blue-600">{sub.pbdType === 'PBD1' ? 'PBD Pertengahan' : 'PBD Akhir'}</td>
+                            <td className="px-4 py-3 font-medium text-blue-600">{sub.pbdType}</td>
                             <td className="px-4 py-3">{sub.tahap}</td>
                             <td className="px-4 py-3 font-medium">{sub.kelas}</td>
                             <td className="px-4 py-3">{sub.mataPelajaran}</td>
@@ -256,11 +256,11 @@ export default function TeacherRegistration() {
                     <label className="text-xs font-bold text-slate-700 uppercase tracking-wide">Sesi PBD</label>
                     <select 
                       value={sPbdType}
-                      onChange={e => setSPbdType(e.target.value as 'PBD1' | 'PBD2')}
+                      onChange={e => setSPbdType(e.target.value as 'PBD Pertengahan' | 'PBD Akhir')}
                       className="w-full px-4 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-gold-500 focus:border-gold-500 bg-white shadow-sm"
                     >
-                      <option value="PBD1">PBD Pertengahan</option>
-                      <option value="PBD2">PBD Akhir</option>
+                      <option value="PBD Pertengahan">PBD Pertengahan</option>
+                      <option value="PBD Akhir">PBD Akhir</option>
                     </select>
                   </div>
                   <div className="flex-1 w-full space-y-1.5">

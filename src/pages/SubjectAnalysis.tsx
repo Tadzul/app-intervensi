@@ -8,7 +8,7 @@ export default function SubjectAnalysis() {
   const [filterTahap, setFilterTahap] = useState('Semua');
   const [filterTahun, setFilterTahun] = useState('Semua');
   const [filterKelas, setFilterKelas] = useState('Semua');
-  const [filterPbd, setFilterPbd] = useState('PBD2');
+  const [filterPbd, setFilterPbd] = useState('PBD Akhir');
 
   // Derive available filters based on selections
   const availableClasses = useMemo(() => {
@@ -123,8 +123,8 @@ export default function SubjectAnalysis() {
               onChange={e => setFilterPbd(e.target.value)}
               className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-gold-500 transition-all font-medium text-slate-800"
             >
-              <option value="PBD1">PBD Pertengahan</option>
-              <option value="PBD2">PBD Akhir</option>
+              <option value="PBD Pertengahan">PBD Pertengahan</option>
+              <option value="PBD Akhir">PBD Akhir</option>
             </select>
           </div>
           <div className="space-y-1">

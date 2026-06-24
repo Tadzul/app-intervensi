@@ -6,6 +6,8 @@ import Dashboard from './pages/Dashboard';
 import TeacherRegistration from './pages/TeacherRegistration';
 import InterventionForm from './pages/InterventionForm';
 import SubjectAnalysis from './pages/SubjectAnalysis';
+import StudentAnalysis from './pages/StudentAnalysis';
+import TopStudents from './pages/TopStudents';
 import RootCauseAnalysis from './pages/RootCauseAnalysis';
 import Reports from './pages/Reports';
 import PrintAnalysis from './pages/PrintAnalysis';
@@ -24,6 +26,8 @@ export default function App() {
             <Route path="teacher-registration" element={<TeacherRegistration />} />
             <Route path="intervention-form" element={<InterventionForm />} />
             <Route path="subject-analysis" element={<SubjectAnalysis />} />
+            <Route path="student-analysis" element={<StudentAnalysis />} />
+            <Route path="top-students" element={<TopStudents />} />
             <Route path="root-cause-analysis" element={<RootCauseAnalysis />} />
             <Route path="system-settings" element={<SystemSettings />} />
             <Route path="reports" element={<Reports />} />

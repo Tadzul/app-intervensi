@@ -21,7 +21,7 @@ interface AppState {
   updateIntervention: (intervention: Intervention) => void;
   deleteIntervention: (id: string) => void;
   uploadPBDData: (data: StudentPBD[]) => void;
-  deletePBDClass: (pbdType: 'PBD1' | 'PBD2', kelas: string) => void;
+  deletePBDClass: (pbdType: 'PBD Pertengahan' | 'PBD Akhir', kelas: string) => void;
   updatePbdControl: (control: { pbd1Open: boolean; pbd2Open: boolean }) => void;
 }
 
@@ -204,7 +204,7 @@ export const useDataStoreValue = () => {
     }
   }, []);
 
-  const deletePBDClass = useCallback((pbdType: 'PBD1' | 'PBD2', kelas: string) => {
+  const deletePBDClass = useCallback((pbdType: 'PBD Pertengahan' | 'PBD Akhir', kelas: string) => {
     setData(prev => {
       const prevPBD = prev.studentsPBD || [];
       return {
