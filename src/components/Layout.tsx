@@ -62,8 +62,14 @@ export default function Layout() {
         "fixed inset-y-0 left-0 z-30 w-64 bg-blue-950 text-slate-300 transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 no-print shadow-xl flex flex-col",
         sidebarOpen ? "translate-x-0" : "-translate-x-full"
       )}>
-        <div className="h-20 flex items-center px-6 bg-blue-950/50 border-b border-blue-900/50 font-bold text-2xl text-gold-400 tracking-wider shadow-sm shrink-0">
-          SAIAS
+        <div className="h-20 flex items-center gap-3 px-5 bg-blue-950/50 border-b border-blue-900/50 shadow-sm shrink-0">
+          <img 
+            src="https://i.postimg.cc/1ty0fYQy/Chat-GPT-Image-Aug-4-2026-05-09-43-PM.png" 
+            alt="Logo Sistem Intervensi Sekolah" 
+            className="h-11 w-auto object-contain rounded-lg bg-white/10 p-1 border border-gold-400/30 shadow-sm"
+            referrerPolicy="no-referrer"
+          />
+          <span className="font-bold text-2xl text-gold-400 tracking-wider">SAIAS</span>
         </div>
         <div className="p-4 pb-20 flex-1 overflow-y-auto">
           <p className="text-xs text-blue-300/70 uppercase font-bold tracking-wider mb-4 px-2">Menu Utama</p>
@@ -92,15 +98,22 @@ export default function Layout() {
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Top Header */}
         <header className="h-20 bg-gradient-to-r from-blue-950 via-slate-900 to-blue-900 border-b-2 border-gold-500 flex items-center justify-between px-4 sm:px-6 z-10 sticky top-0 no-print shadow-lg">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 sm:gap-4">
             <button 
               onClick={() => setSidebarOpen(true)}
               className="lg:hidden p-2 -ml-2 text-slate-300 hover:text-white focus:outline-none transition-colors"
             >
               <Menu className="w-6 h-6" />
             </button>
-            <h1 className="text-lg font-bold text-white hidden sm:block tracking-wide">
-              SISTEM ANALISIS INTERVENSI AKADEMIK SEKOLAH
+            <img 
+              src="https://i.postimg.cc/1ty0fYQy/Chat-GPT-Image-Aug-4-2026-05-09-43-PM.png" 
+              alt="Logo Sistem Intervensi Sekolah" 
+              className="h-12 w-auto object-contain rounded-lg bg-white/10 p-1 border border-gold-400/30 shadow-md shrink-0"
+              referrerPolicy="no-referrer"
+            />
+            <h1 className="text-sm sm:text-base lg:text-lg font-bold text-white tracking-wide">
+              <span className="hidden sm:inline">SISTEM ANALISIS INTERVENSI AKADEMIK SEKOLAH</span>
+              <span className="sm:hidden">SAIAS</span>
             </h1>
           </div>
           <div className="flex items-center gap-3 sm:gap-5">
