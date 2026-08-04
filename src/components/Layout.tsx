@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
-import { LayoutDashboard, Users, FileEdit, BarChart2, AlertCircle, FileText, Printer, Menu, LogIn, LogOut, X, Loader2, Settings, Award } from 'lucide-react';
+import { LayoutDashboard, Users, FileEdit, BarChart2, AlertCircle, FileText, Printer, Menu, LogIn, LogOut, X, Loader2, Settings, Award, RefreshCw } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useDataStore } from '../store/useDataStore';
 
@@ -11,7 +11,7 @@ export default function Layout() {
   const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState('');
   
-  const { isAdmin, isLoadingData, loadingProgress, loadingMessage, loginAdmin, logoutAdmin } = useDataStore();
+  const { isAdmin, isLoadingData, loadingProgress, loadingMessage, refreshData, loginAdmin, logoutAdmin } = useDataStore();
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -102,7 +102,16 @@ export default function Layout() {
               SISTEM ANALISIS INTERVENSI AKADEMIK SEKOLAH
             </h1>
           </div>
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-4 sm:gap-6">
+            <button
+              onClick={() => refreshData()}
+              disabled={isLoadingData}
+              title="Segarkan data dari database Google Sheet"
+              className="p-2 bg-blue-900/60 hover:bg-blue-800 text-blue-200 hover:text-white rounded-lg border border-blue-700/50 transition-all flex items-center gap-1.5 text-xs font-semibold"
+            >
+              <RefreshCw className={`w-4 h-4 ${isLoadingData ? 'animate-spin' : ''}`} />
+              <span className="hidden lg:inline">Segarkan Sheet</span>
+            </button>
             <div className="text-sm font-bold text-blue-200 hidden md:block tracking-wide">{currentDate}</div>
             <div className="flex items-center gap-4 pl-6 border-l border-blue-800/50">
               <div className="w-11 h-11 rounded-full bg-gradient-to-br from-gold-400 via-amber-400 to-yellow-500 shadow-lg flex items-center justify-center text-blue-950 font-black text-xl hover:scale-110 transition-transform duration-300 ring-2 ring-gold-400 ring-offset-2 ring-offset-blue-900 cursor-pointer" onClick={() => isAdmin ? logoutAdmin() : setShowLoginPrompt(true)}>

@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { useDataStore } from '../store/useDataStore';
-import { Users, BookOpen, FileText, CheckSquare } from 'lucide-react';
+import { Users, BookOpen, FileText, CheckSquare, RefreshCw, Database } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 export default function Dashboard() {
-  const { teachers, subjects, interventions } = useDataStore();
+  const { teachers, subjects, interventions, refreshData, isLoadingData } = useDataStore();
   const [filterPbdType, setFilterPbdType] = useState('PBD Pertengahan');
 
   const filteredSubjects = subjects.filter(s => filterPbdType ? s.pbdType === filterPbdType : true);
@@ -35,21 +35,39 @@ export default function Dashboard() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight text-slate-900">Dashboard</h2>
-          <p className="text-slate-500">Ringkasan analisis intervensi akademik secara keseluruhan.</p>
+          <div className="flex items-center gap-3">
+            <h2 className="text-2xl font-bold tracking-tight text-slate-900">Dashboard</h2>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-700 text-xs font-bold rounded-full border border-emerald-200">
+              <Database className="w-3.5 h-3.5 text-emerald-600" />
+              Database Sheet Disambungkan ({teachers.length} Guru)
+            </span>
+          </div>
+          <p className="text-slate-500 mt-1">Ringkasan analisis intervensi akademik secara keseluruhan.</p>
         </div>
         
-        <div className="bg-white p-3 rounded-xl shadow-sm border border-slate-200 flex items-center space-x-3">
-          <label className="text-sm font-semibold text-slate-700 whitespace-nowrap">Sesi PBD:</label>
-          <select 
-            value={filterPbdType}
-            onChange={e => setFilterPbdType(e.target.value)}
-            className="w-full sm:w-auto px-4 py-2 border border-slate-300 rounded-lg text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-gold-500 transition-all font-medium text-slate-800"
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            onClick={() => refreshData()}
+            disabled={isLoadingData}
+            className="px-4 py-2 bg-blue-900 text-white hover:bg-blue-800 rounded-xl font-bold text-sm flex items-center gap-2 shadow-sm transition-all disabled:opacity-50"
+            title="Muat semula data dari Google Sheet"
           >
-            <option value="">Semua Sesi</option>
-            <option value="PBD Pertengahan">PBD Pertengahan</option>
-            <option value="PBD Akhir">PBD Akhir</option>
-          </select>
+            <RefreshCw className={`w-4 h-4 ${isLoadingData ? 'animate-spin' : ''}`} />
+            Segarkan Data Sheet
+          </button>
+
+          <div className="bg-white p-2 sm:p-2.5 rounded-xl shadow-sm border border-slate-200 flex items-center space-x-3">
+            <label className="text-sm font-semibold text-slate-700 whitespace-nowrap pl-2">Sesi PBD:</label>
+            <select 
+              value={filterPbdType}
+              onChange={e => setFilterPbdType(e.target.value)}
+              className="w-full sm:w-auto px-4 py-1.5 border border-slate-300 rounded-lg text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-gold-500 transition-all font-medium text-slate-800"
+            >
+              <option value="">Semua Sesi</option>
+              <option value="PBD Pertengahan">PBD Pertengahan</option>
+              <option value="PBD Akhir">PBD Akhir</option>
+            </select>
+          </div>
         </div>
       </div>
 

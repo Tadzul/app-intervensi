@@ -10,6 +10,9 @@ interface AppState {
   pbdControl: { pbd1Open: boolean; pbd2Open: boolean };
   isAdmin: boolean;
   isLoadingData: boolean;
+  loadingProgress: number;
+  loadingMessage: string;
+  refreshData: () => Promise<void>;
   loginAdmin: (user: string, pass: string) => boolean;
   logoutAdmin: () => void;
   addTeacher: (teacher: Teacher) => void;
@@ -70,39 +73,82 @@ export const useDataStoreValue = () => {
     return sessionStorage.getItem('saias_is_admin') === 'true';
   });
 
-  // Fetch initial data from Google Apps Script
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        const remoteData = await loadInitialData((progress, message) => {
-          if (mounted) {
-            setLoadingProgress(progress);
-            setLoadingMessage(message);
+  // Fetch data from Google Apps Script database
+  const refreshData = useCallback(async () => {
+    setIsLoadingData(true);
+    try {
+      const remoteData = await loadInitialData((progress, message) => {
+        setLoadingProgress(progress);
+        setLoadingMessage(message);
+      });
+
+      setData(prev => {
+        // Smart merge / dedup for teachers
+        const teachersMap = new Map<string, Teacher>();
+        remoteData.teachers.forEach(t => {
+          if (t && t.name) teachersMap.set(t.name.toLowerCase().trim(), t);
+        });
+        (prev.teachers || []).forEach(t => {
+          if (t && t.name && !teachersMap.has(t.name.toLowerCase().trim())) {
+            teachersMap.set(t.name.toLowerCase().trim(), t);
           }
         });
-        if (mounted) {
-          setData(prev => {
-            // Priority given to remote data, but for resilience if remote fails (returns empty),
-            // you could conditionally merge. Here we overwrite with remote if fetched.
-            const updated = {
-               ...prev,
-               teachers: remoteData.teachers.length > 0 ? remoteData.teachers : (prev.teachers || []),
-               subjects: remoteData.subjects.length > 0 ? remoteData.subjects : (prev.subjects || []),
-               interventions: remoteData.interventions.length > 0 ? remoteData.interventions : (prev.interventions || []),
-               studentsPBD: remoteData.studentsPBD.length > 0 ? remoteData.studentsPBD : (prev.studentsPBD || []),
-            };
-            return updated;
-          });
-        }
-      } catch (err) {
-        console.error("Failed to fetch initial GAS data", err);
-      } finally {
-        if (mounted) setIsLoadingData(false);
-      }
-    })();
-    return () => { mounted = false; };
+
+        // Smart merge / dedup for subjects
+        const subjectsMap = new Map<string, TeacherSubject>();
+        remoteData.subjects.forEach(s => {
+          const key = `${s.teacherId}_${s.kelas}_${s.mataPelajaran}_${s.pbdType}`;
+          subjectsMap.set(key, s);
+        });
+        (prev.subjects || []).forEach(s => {
+          const key = `${s.teacherId}_${s.kelas}_${s.mataPelajaran}_${s.pbdType}`;
+          if (!subjectsMap.has(key)) {
+            subjectsMap.set(key, s);
+          }
+        });
+
+        // Smart merge / dedup for interventions
+        const interventionsMap = new Map<string, Intervention>();
+        remoteData.interventions.forEach(i => {
+          interventionsMap.set(String(i.id), i);
+        });
+        (prev.interventions || []).forEach(i => {
+          if (!interventionsMap.has(String(i.id))) {
+            interventionsMap.set(String(i.id), i);
+          }
+        });
+
+        // Smart merge / dedup for studentsPBD
+        const pbdMap = new Map<string, StudentPBD>();
+        remoteData.studentsPBD.forEach(p => {
+          const key = `${p.pbdType}_${p.kelas}_${p.nama}`;
+          pbdMap.set(key, p);
+        });
+        (prev.studentsPBD || []).forEach(p => {
+          const key = `${p.pbdType}_${p.kelas}_${p.nama}`;
+          if (!pbdMap.has(key)) {
+            pbdMap.set(key, p);
+          }
+        });
+
+        return {
+          ...prev,
+          teachers: Array.from(teachersMap.values()),
+          subjects: Array.from(subjectsMap.values()),
+          interventions: Array.from(interventionsMap.values()),
+          studentsPBD: Array.from(pbdMap.values())
+        };
+      });
+    } catch (err) {
+      console.error("Failed to fetch GAS data", err);
+    } finally {
+      setIsLoadingData(false);
+    }
   }, []);
+
+  useEffect(() => {
+    refreshData();
+  }, [refreshData]);
 
   // Save to local storage whenever data changes (as offline fallback)
   useEffect(() => {
@@ -237,6 +283,7 @@ export const useDataStoreValue = () => {
     isLoadingData,
     loadingProgress,
     loadingMessage,
+    refreshData,
     loginAdmin,
     logoutAdmin,
     addTeacher,

@@ -50,7 +50,7 @@ export default function TeacherRegistration() {
 
   const totalPages = Math.ceil(teachers.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const sortedTeachers = [...teachers].sort((a, b) => a.name.localeCompare(b.name));
+  const sortedTeachers = [...teachers].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
   const currentTeachers = sortedTeachers.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
   useEffect(() => {
