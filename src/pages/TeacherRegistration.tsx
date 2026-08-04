@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useDataStore } from '../store/useDataStore';
-import { Plus, Trash2, Edit2, Save, X, Loader2, ChevronLeft, ChevronRight, Search, UserCheck } from 'lucide-react';
+import { Plus, Trash2, Edit2, Save, X, Loader2, ChevronLeft, ChevronRight, Search, UserCheck, AlertTriangle } from 'lucide-react';
 
 const CLASSES = [
   "1 Bitara", "1 Dinamik", "1 Intelek", "1 Pintar",
@@ -35,6 +35,7 @@ export default function TeacherRegistration() {
 
   const [tName, setTName] = useState('');
   const [tEmail, setTEmail] = useState('');
+  const [duplicateError, setDuplicateError] = useState<string | null>(null);
 
   const [sTahap, setSTahap] = useState('Tahap 1');
   const [sKelas, setSKelas] = useState('');
@@ -105,9 +106,25 @@ export default function TeacherRegistration() {
 
   const handleAddTeacher = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!tName) return;
+    if (!tName.trim()) return;
+
+    const trimmedName = tName.trim();
+
+    // Peraturan ketat: Semak jika nama guru telah wujud dalam sistem
+    const existingTeacher = teachers.find(
+      t => (t.name || '').trim().toLowerCase() === trimmedName.toLowerCase()
+    );
+
+    if (existingTeacher) {
+      const msg = `Nama guru "${trimmedName}" telah pun berdaftar dalam sistem! Pendaftaran guru baharu dengan nama yang sama tidak dibenarkan.`;
+      setDuplicateError(msg);
+      alert(`⚠️ PERATURAN PENDAFTARAN GURU:\n\n${msg}`);
+      return;
+    }
+
+    setDuplicateError(null);
     const newId = Date.now().toString();
-    addTeacher({ id: newId, name: tName, email: tEmail });
+    addTeacher({ id: newId, name: trimmedName, email: tEmail.trim() });
     setTName('');
     setTEmail('');
     setActiveNameDropdown(false);
@@ -146,6 +163,24 @@ export default function TeacherRegistration() {
         <div className="px-6 py-4 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white rounded-t-2xl">
           <h3 className="font-bold text-slate-800">Tambah Guru Baru</h3>
         </div>
+
+        {duplicateError && (
+          <div className="mx-6 mt-4 p-4 bg-red-50 border-2 border-red-300 rounded-xl flex items-start gap-3 text-red-900 shadow-sm animate-pulse">
+            <AlertTriangle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+            <div className="flex-1 text-xs sm:text-sm">
+              <p className="font-extrabold text-red-950 uppercase tracking-wide">Pendaftaran Ditolak (Guru Sudah Berdaftar)</p>
+              <p className="mt-1 font-medium">{duplicateError}</p>
+            </div>
+            <button 
+              type="button"
+              onClick={() => setDuplicateError(null)}
+              className="text-red-500 hover:text-red-800 p-1 font-bold text-xs rounded-lg hover:bg-red-100 transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
         <form onSubmit={handleAddTeacher} className="p-6 flex flex-col sm:flex-row gap-4 items-end">
           <div className="flex-1 space-y-1.5 w-full relative">
             <label className="text-sm font-semibold text-slate-700">Nama Guru</label>
@@ -156,12 +191,19 @@ export default function TeacherRegistration() {
               onChange={e => {
                 setTName(e.target.value);
                 setActiveNameDropdown(true);
+                if (duplicateError) setDuplicateError(null);
               }}
               onFocus={() => setActiveNameDropdown(true)}
               onBlur={() => setTimeout(() => setActiveNameDropdown(false), 200)}
-              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold-500 focus:bg-white transition-all"
+              className={`w-full px-4 py-2.5 bg-slate-50 border ${teachers.some(t => (t.name || '').trim().toLowerCase() === tName.trim().toLowerCase()) && tName.trim().length > 0 ? 'border-red-500 ring-2 ring-red-200' : 'border-slate-200'} rounded-xl focus:outline-none focus:ring-2 focus:ring-gold-500 focus:bg-white transition-all`}
               placeholder="Sila taip nama guru..."
             />
+            {teachers.some(t => (t.name || '').trim().toLowerCase() === tName.trim().toLowerCase()) && tName.trim().length > 0 && (
+              <p className="text-xs font-bold text-red-600 flex items-center gap-1 mt-1">
+                <AlertTriangle className="w-3.5 h-3.5" />
+                Nama guru ini sudah ada dalam senarai guru berdaftar!
+              </p>
+            )}
             {isFetchingTeachers && (
               <div className="absolute right-3 top-9">
                 <Loader2 className="w-5 h-5 text-slate-400 animate-spin" />
