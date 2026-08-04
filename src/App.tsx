@@ -11,6 +11,7 @@ import TopStudents from './pages/TopStudents';
 import RootCauseAnalysis from './pages/RootCauseAnalysis';
 import Reports from './pages/Reports';
 import PrintAnalysis from './pages/PrintAnalysis';
+import PanitiaIntervention from './pages/PanitiaIntervention';
 import SystemSettings from './pages/SystemSettings';
 
 export default function App() {
@@ -32,6 +33,7 @@ export default function App() {
             <Route path="system-settings" element={<SystemSettings />} />
             <Route path="reports" element={<Reports />} />
             <Route path="print-analysis" element={<PrintAnalysis />} />
+            <Route path="panitia-intervention" element={<PanitiaIntervention />} />
           </Route>
         </Routes>
       </BrowserRouter>

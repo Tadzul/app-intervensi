@@ -67,6 +67,69 @@ export const TAHAP2_SUBJECTS = [
   "Bahasa Arab", "PJPK", "Moral", "Muzik", "Pendidikan Islam", "RBT", "Sejarah"
 ];
 
+export const PANITIA_LIST = [
+  "PANITIA BAHASA MELAYU",
+  "PANITIA BAHASA INGGERIS",
+  "PANITIA SAINS",
+  "PANITIA MATEMATIK",
+  "PANITIA SEJARAH",
+  "PANITIA AGAMA ISLAM",
+  "PANITIA PJPK",
+  "PANITIA MUZIK",
+  "PANITIA RBT",
+  "PANITIA BAHASA ARAB",
+  "PANITIA PSV",
+  "PANITIA MORAL"
+] as const;
+
+export function matchesPanitia(subjectName: string, panitiaName: string): boolean {
+  if (!subjectName) return false;
+  if (!panitiaName || panitiaName === "Semua Panitia") return true;
+
+  const s = subjectName.toLowerCase().trim();
+  const p = panitiaName.toUpperCase().trim();
+
+  if (p === "PANITIA BAHASA MELAYU") {
+    return s.includes("bahasa melayu") || s === "bm";
+  }
+  if (p === "PANITIA BAHASA INGGERIS") {
+    return s.includes("bahasa inggeris") || s === "bi" || s.includes("english");
+  }
+  if (p === "PANITIA SAINS") {
+    return s.includes("sains") || s === "sn" || s.includes("science");
+  }
+  if (p === "PANITIA MATEMATIK") {
+    return s.includes("matematik") || s === "mt" || s.includes("math");
+  }
+  if (p === "PANITIA SEJARAH") {
+    return s.includes("sejarah") || s === "sej";
+  }
+  if (p === "PANITIA AGAMA ISLAM") {
+    return s.includes("pendidikan islam") || s.includes("agama islam") || s.includes("pi") || s === "pa";
+  }
+  if (p === "PANITIA PJPK") {
+    return s.includes("pjpk") || s.includes("pj") || s.includes("pk") || s.includes("jasmani") || s.includes("kesihatan");
+  }
+  if (p === "PANITIA MUZIK") {
+    return s.includes("muzik");
+  }
+  if (p === "PANITIA RBT") {
+    return s.includes("rbt") || s.includes("reka bentuk");
+  }
+  if (p === "PANITIA BAHASA ARAB") {
+    return s.includes("bahasa arab") || s === "ba";
+  }
+  if (p === "PANITIA PSV") {
+    return s.includes("psv") || s.includes("seni") || s.includes("visual");
+  }
+  if (p === "PANITIA MORAL") {
+    return s.includes("moral");
+  }
+
+  const cleanP = p.replace("PANITIA ", "").toLowerCase();
+  return s.includes(cleanP) || cleanP.includes(s);
+}
+
 export const PUNCA_OPTIONS = [
   "Kehadiran Murid Rendah",
   "Tidak Menyiapkan Latihan",
