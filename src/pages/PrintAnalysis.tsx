@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
 import { useDataStore } from '../store/useDataStore';
-import { Printer } from 'lucide-react';
+import { Printer, Download, Loader2 } from 'lucide-react';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
 export default function PrintAnalysis() {
   const { teachers, interventions } = useDataStore();
   const [selectedTeacherId, setSelectedTeacherId] = useState('');
   const [filterPbdType, setFilterPbdType] = useState('');
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
   const filteredTeachers = selectedTeacherId 
     ? teachers.filter(t => String(t.id) === String(selectedTeacherId))
@@ -19,11 +22,55 @@ export default function PrintAnalysis() {
     window.print();
   };
 
+  const handleDownloadPdf = async () => {
+    const element = document.getElementById('print-content-area');
+    if (!element) return;
+
+    setIsGeneratingPdf(true);
+    try {
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff'
+      });
+
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+
+      const imgWidth = pdfWidth;
+      const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+
+      let heightLeft = imgHeight;
+      let position = 0;
+
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pdfHeight;
+
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pdfHeight;
+      }
+
+      const dateStr = new Date().toISOString().split('T')[0];
+      pdf.save(`Pelaporan_Intervensi_${dateStr}.pdf`);
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      alert('Gagal menjana fail PDF. Sila guna pilihan Cetak Borang > Simpan sebagai PDF.');
+    } finally {
+      setIsGeneratingPdf(false);
+    }
+  };
+
   return (
     <div className="max-w-[1200px] mx-auto space-y-6">
       <div className="no-print">
         <h2 className="text-2xl font-bold tracking-tight text-slate-900">Intervensi Versi Cetak</h2>
-        <p className="text-slate-500">Cetak analisis mengikut format rasmi borang pelaporan KPM.</p>
+        <p className="text-slate-500">Cetak analisis atau muat turun PDF mengikut format rasmi borang pelaporan KPM.</p>
       </div>
 
       <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 no-print flex flex-col sm:flex-row items-end gap-4">
@@ -52,15 +99,25 @@ export default function PrintAnalysis() {
             ))}
           </select>
         </div>
-        <button
-          onClick={handlePrint}
-          className="w-full sm:w-auto px-6 py-2 bg-slate-900 text-white font-medium rounded-lg hover:bg-slate-800 transition-colors flex items-center justify-center gap-2"
-        >
-          <Printer className="w-5 h-5" /> Cetak Borang
-        </button>
+        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+          <button
+            onClick={handleDownloadPdf}
+            disabled={isGeneratingPdf}
+            className="px-5 py-2 bg-emerald-700 text-white font-medium rounded-lg hover:bg-emerald-800 transition-colors flex items-center justify-center gap-2 shadow-sm disabled:opacity-50"
+          >
+            {isGeneratingPdf ? <Loader2 className="w-5 h-5 animate-spin" /> : <Download className="w-5 h-5" />}
+            {isGeneratingPdf ? 'Menjana PDF...' : 'Muat Turun PDF'}
+          </button>
+          <button
+            onClick={handlePrint}
+            className="px-5 py-2 bg-slate-900 text-white font-medium rounded-lg hover:bg-slate-800 transition-colors flex items-center justify-center gap-2 shadow-sm"
+          >
+            <Printer className="w-5 h-5" /> Cetak Borang
+          </button>
+        </div>
       </div>
 
-      <div className="print-area space-y-16">
+      <div id="print-content-area" className="print-area space-y-16 bg-white p-4">
         {filteredTeachers.map(teacher => {
           const teacherInterventions = visibleInterventions.filter(i => String(i.teacherId) === String(teacher.id));
           
@@ -147,3 +204,4 @@ export default function PrintAnalysis() {
     </div>
   );
 }
+
