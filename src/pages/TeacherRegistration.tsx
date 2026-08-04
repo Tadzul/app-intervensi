@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useDataStore } from '../store/useDataStore';
-import { Plus, Trash2, Edit2, Save, X, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, Trash2, Edit2, Save, X, Loader2, ChevronLeft, ChevronRight, Search, UserCheck } from 'lucide-react';
 
 const CLASSES = [
   "1 Bitara", "1 Dinamik", "1 Intelek", "1 Pintar",
@@ -45,19 +45,43 @@ export default function TeacherRegistration() {
   const [isFetchingTeachers, setIsFetchingTeachers] = useState(false);
   const [activeNameDropdown, setActiveNameDropdown] = useState(false);
 
+  const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const ITEMS_PER_PAGE = 5;
+  const [itemsPerPage, setItemsPerPage] = useState<number>(5);
+  const PAGE_SIZE_OPTIONS = [5, 10, 20, 50, 60];
 
-  const totalPages = Math.ceil(teachers.length / ITEMS_PER_PAGE);
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const sortedTeachers = [...teachers].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-  const currentTeachers = sortedTeachers.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  const sortedTeachers = useMemo(() => {
+    return [...teachers].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+  }, [teachers]);
+
+  const filteredTeachers = useMemo(() => {
+    if (!searchQuery.trim()) return sortedTeachers;
+    const q = searchQuery.toLowerCase().trim();
+    return sortedTeachers.filter(t => {
+      const nameMatch = (t.name || '').toLowerCase().includes(q);
+      const emailMatch = (t.email || '').toLowerCase().includes(q);
+      const teacherSubjs = subjects.filter(s => String(s.teacherId) === String(t.id));
+      const subjMatch = teacherSubjs.some(s => 
+        s.kelas.toLowerCase().includes(q) || 
+        s.mataPelajaran.toLowerCase().includes(q)
+      );
+      return nameMatch || emailMatch || subjMatch;
+    });
+  }, [sortedTeachers, searchQuery, subjects]);
+
+  const totalPages = Math.ceil(filteredTeachers.length / itemsPerPage) || 1;
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const currentTeachers = filteredTeachers.slice(startIndex, startIndex + itemsPerPage);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, itemsPerPage]);
 
   useEffect(() => {
     if (currentPage > totalPages && totalPages > 0) {
       setCurrentPage(totalPages);
     }
-  }, [teachers.length, currentPage, totalPages]);
+  }, [filteredTeachers.length, currentPage, totalPages]);
 
   useEffect(() => {
     async function loadTeachers() {
@@ -184,7 +208,72 @@ export default function TeacherRegistration() {
         </form>
       </div>
 
+      {/* Carian Guru & Pagination Limit Section */}
+      <div className="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+        <div className="relative flex-1">
+          <Search className="w-5 h-5 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Cari guru berdaftar (taip nama, emel, atau subjek)..."
+            className="w-full pl-11 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:bg-white transition-all font-medium text-slate-800 placeholder:text-slate-400"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-200 transition-colors"
+              title="Kosongkan carian"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3 shrink-0 self-end sm:self-center">
+          <div className="flex items-center gap-2 bg-slate-50 px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-700">
+            <span>Papar:</span>
+            <select
+              value={itemsPerPage}
+              onChange={(e) => setItemsPerPage(Number(e.target.value))}
+              className="bg-white border border-slate-300 rounded-lg px-2 py-1 text-xs font-bold text-amber-900 focus:ring-2 focus:ring-amber-500 cursor-pointer"
+            >
+              {PAGE_SIZE_OPTIONS.map(size => (
+                <option key={size} value={size}>{size} / ms</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex items-center gap-2 text-xs font-bold text-slate-600 bg-slate-50 px-3.5 py-2.5 rounded-xl border border-slate-100">
+            <UserCheck className="w-4 h-4 text-emerald-600" />
+            <span>
+              {searchQuery ? (
+                <>Dijumpai: <strong className="text-amber-600">{filteredTeachers.length}</strong> daripada {teachers.length} guru</>
+              ) : (
+                <>Jumlah Guru: <strong className="text-slate-900">{teachers.length}</strong> orang</>
+              )}
+            </span>
+          </div>
+        </div>
+      </div>
+
       <div className="space-y-6">
+        {currentTeachers.length === 0 && (
+          <div className="bg-white p-10 rounded-2xl border border-dashed border-slate-200 text-center space-y-3">
+            <Search className="w-10 h-10 text-slate-300 mx-auto" />
+            <h4 className="font-bold text-slate-700 text-base">Tiada Guru Dijumpai</h4>
+            <p className="text-sm text-slate-500 max-w-md mx-auto">
+              Tiada nama guru atau subjek yang sepadan dengan carian <span className="font-semibold text-slate-800">"{searchQuery}"</span>. Sila cuba kata kunci lain.
+            </p>
+            <button
+              onClick={() => setSearchQuery('')}
+              className="mt-2 px-4 py-2 bg-slate-100 text-slate-700 hover:bg-slate-200 font-bold text-xs rounded-xl transition-all"
+            >
+              Reset Carian
+            </button>
+          </div>
+        )}
+
         {currentTeachers.map((teacher, index) => {
           const teacherSubjects = subjects.filter(s => String(s.teacherId) === String(teacher.id));
           const isEditing = String(editingTeacherId) === String(teacher.id);
@@ -334,12 +423,29 @@ export default function TeacherRegistration() {
           );
         })}
 
-        {totalPages > 1 && (
+        {filteredTeachers.length > 0 && (
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-8 bg-white p-4 sm:px-6 rounded-2xl shadow-sm border border-slate-100">
-            <span className="text-sm text-slate-500 text-center sm:text-left">
-              Memaparkan <span className="font-bold text-slate-900">{startIndex + 1}</span> hingga <span className="font-bold text-slate-900">{Math.min(startIndex + ITEMS_PER_PAGE, teachers.length)}</span> daripada <span className="font-bold text-slate-900">{teachers.length}</span> guru
-            </span>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap items-center gap-3 text-center sm:text-left">
+              <span className="text-sm text-slate-500">
+                Memaparkan <span className="font-bold text-slate-900">{filteredTeachers.length > 0 ? startIndex + 1 : 0}</span> hingga <span className="font-bold text-slate-900">{Math.min(startIndex + itemsPerPage, filteredTeachers.length)}</span> daripada <span className="font-bold text-slate-900">{filteredTeachers.length}</span> guru {searchQuery && `(daripada ${teachers.length} keseluruhan)`}
+              </span>
+
+              <div className="flex items-center gap-1.5 pl-2 border-l border-slate-200">
+                <span className="text-xs text-slate-500 font-medium">Papar:</span>
+                <select
+                  value={itemsPerPage}
+                  onChange={(e) => setItemsPerPage(Number(e.target.value))}
+                  className="px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-800 cursor-pointer focus:ring-2 focus:ring-amber-500"
+                >
+                  {PAGE_SIZE_OPTIONS.map(size => (
+                    <option key={size} value={size}>{size}</option>
+                  ))}
+                </select>
+                <span className="text-xs text-slate-500 font-medium">rekod sehalaman</span>
+              </div>
+            </div>
+
+            <div className="flex gap-2 items-center">
               <button
                 onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
@@ -349,8 +455,8 @@ export default function TeacherRegistration() {
                 <ChevronLeft className="w-5 h-5" />
               </button>
               
-              <div className="flex items-center px-4 font-semibold text-sm text-slate-700">
-                {currentPage} / {totalPages}
+              <div className="flex items-center px-4 font-semibold text-sm text-slate-700 whitespace-nowrap">
+                Halaman {currentPage} / {totalPages}
               </div>
 
               <button
