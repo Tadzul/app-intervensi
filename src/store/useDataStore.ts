@@ -10,9 +10,11 @@ interface AppState {
   pbdControl: { pbd1Open: boolean; pbd2Open: boolean };
   isAdmin: boolean;
   isLoadingData: boolean;
+  isSyncing: boolean;
+  lastSyncTime: string | null;
   loadingProgress: number;
   loadingMessage: string;
-  refreshData: () => Promise<void>;
+  refreshData: (showBlockingLoader?: boolean) => Promise<void>;
   loginAdmin: (user: string, pass: string) => boolean;
   logoutAdmin: () => void;
   addTeacher: (teacher: Teacher) => void;
@@ -65,7 +67,15 @@ export const useDataStoreValue = () => {
     pbdControl: { pbd1Open: boolean; pbd2Open: boolean };
   }>(getInitialState);
   
-  const [isLoadingData, setIsLoadingData] = useState(true);
+  // Only show blocking loader on initial startup IF there is no local cache
+  const [isLoadingData, setIsLoadingData] = useState(() => {
+    const initial = getInitialState();
+    const hasData = (initial.teachers.length > 0 || initial.interventions.length > 0 || initial.studentsPBD.length > 0);
+    return !hasData;
+  });
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [lastSyncTime, setLastSyncTime] = useState<string | null>(null);
+
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [loadingMessage, setLoadingMessage] = useState("Memulakan persediaan sistem...");
 
@@ -73,9 +83,25 @@ export const useDataStoreValue = () => {
     return sessionStorage.getItem('saias_is_admin') === 'true';
   });
 
+  // Helper for non-blocking background database sync
+  const runBackgroundSync = useCallback(async (syncFn: () => Promise<any>) => {
+    setIsSyncing(true);
+    try {
+      await syncFn();
+      setLastSyncTime(new Date().toLocaleTimeString('ms-MY', { hour: '2-digit', minute: '2-digit' }));
+    } catch (err) {
+      console.error("Background sync error:", err);
+    } finally {
+      setIsSyncing(false);
+    }
+  }, []);
+
   // Fetch data from Google Apps Script database
-  const refreshData = useCallback(async () => {
-    setIsLoadingData(true);
+  const refreshData = useCallback(async (showBlockingLoader = false) => {
+    if (showBlockingLoader) {
+      setIsLoadingData(true);
+    }
+    setIsSyncing(true);
     try {
       const remoteData = await loadInitialData((progress, message) => {
         setLoadingProgress(progress);
@@ -139,10 +165,12 @@ export const useDataStoreValue = () => {
           studentsPBD: Array.from(pbdMap.values())
         };
       });
+      setLastSyncTime(new Date().toLocaleTimeString('ms-MY', { hour: '2-digit', minute: '2-digit' }));
     } catch (err) {
       console.error("Failed to fetch GAS data", err);
     } finally {
       setIsLoadingData(false);
+      setIsSyncing(false);
     }
   }, []);
 
@@ -150,7 +178,7 @@ export const useDataStoreValue = () => {
     refreshData();
   }, [refreshData]);
 
-  // Save to local storage whenever data changes (as offline fallback)
+  // Save to local storage whenever data changes (instant offline & cache persistence)
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   }, [data]);
@@ -171,16 +199,16 @@ export const useDataStoreValue = () => {
 
   const addTeacher = useCallback((teacher: Teacher) => {
     setData(prev => ({ ...prev, teachers: [...prev.teachers, teacher] }));
-    postSheetData('add', 'Teachers', teacher);
-  }, []);
+    runBackgroundSync(() => postSheetData('add', 'Teachers', teacher));
+  }, [runBackgroundSync]);
 
   const updateTeacher = useCallback((teacher: Teacher) => {
     setData(prev => ({
       ...prev,
       teachers: prev.teachers.map(t => String(t.id) === String(teacher.id) ? teacher : t)
     }));
-    postSheetData('update', 'Teachers', teacher);
-  }, []);
+    runBackgroundSync(() => postSheetData('update', 'Teachers', teacher));
+  }, [runBackgroundSync]);
 
   const deleteTeacher = useCallback((id: string) => {
     setData(prev => ({
@@ -189,50 +217,50 @@ export const useDataStoreValue = () => {
       subjects: prev.subjects.filter(s => String(s.teacherId) !== String(id)), // cascade
       interventions: prev.interventions.filter(i => String(i.teacherId) !== String(id)) // cascade
     }));
-    postSheetData('delete', 'Teachers', { id });
-  }, []);
+    runBackgroundSync(() => postSheetData('delete', 'Teachers', { id }));
+  }, [runBackgroundSync]);
 
   const addSubject = useCallback((subject: TeacherSubject) => {
     setData(prev => ({ ...prev, subjects: [...prev.subjects, subject] }));
-    postSheetData('add', 'Subjects', subject);
-  }, []);
+    runBackgroundSync(() => postSheetData('add', 'Subjects', subject));
+  }, [runBackgroundSync]);
 
   const deleteSubject = useCallback((id: string) => {
     setData(prev => ({
       ...prev,
       subjects: prev.subjects.filter(s => String(s.id) !== String(id))
     }));
-    postSheetData('delete', 'Subjects', { id });
-  }, []);
+    runBackgroundSync(() => postSheetData('delete', 'Subjects', { id }));
+  }, [runBackgroundSync]);
 
   const addIntervention = useCallback((intervention: Intervention) => {
     setData(prev => ({ ...prev, interventions: [...prev.interventions, intervention] }));
-    postSheetData('add', 'Interventions', intervention);
-  }, []);
+    runBackgroundSync(() => postSheetData('add', 'Interventions', intervention));
+  }, [runBackgroundSync]);
 
   const updateIntervention = useCallback((intervention: Intervention) => {
     setData(prev => ({
       ...prev,
       interventions: prev.interventions.map(i => String(i.id) === String(intervention.id) ? intervention : i)
     }));
-    postSheetData('update', 'Interventions', intervention);
-  }, []);
+    runBackgroundSync(() => postSheetData('update', 'Interventions', intervention));
+  }, [runBackgroundSync]);
 
   const deleteIntervention = useCallback((id: string) => {
     setData(prev => ({
       ...prev,
       interventions: prev.interventions.filter(i => String(i.id) !== String(id))
     }));
-    postSheetData('delete', 'Interventions', { id });
-  }, []);
+    runBackgroundSync(() => postSheetData('delete', 'Interventions', { id }));
+  }, [runBackgroundSync]);
 
-  const uploadPBDData = useCallback(async (newData: StudentPBD[]) => {
+  const uploadPBDData = useCallback((newData: StudentPBD[]) => {
     if (!newData || newData.length === 0) return;
 
     const newClasses = [...new Set(newData.map(d => d.kelas))];
     const newType = newData[0]?.pbdType;
     
-    // Optimistic update
+    // Instant Optimistic Cache & State Update
     setData(prev => {
       const prevPBD = prev.studentsPBD || [];
       const filteredOld = prevPBD.filter(
@@ -244,18 +272,17 @@ export const useDataStoreValue = () => {
       };
     });
 
-    // Remote sync
-    for (const kelas of newClasses) {
-      // 1. Delete class data before adding new (replace action)
-      await postSheetData('deleteClassPBD', 'PBD_Data', { pbdType: newType, kelas });
-      
-      const classData = newData.filter(d => d.kelas === kelas);
-      if (classData.length > 0) {
-        // 2. Add new batch
-        await postSheetData('addBatch', 'PBD_Data', classData);
+    // Remote sync in background
+    runBackgroundSync(async () => {
+      for (const kelas of newClasses) {
+        await postSheetData('deleteClassPBD', 'PBD_Data', { pbdType: newType, kelas });
+        const classData = newData.filter(d => d.kelas === kelas);
+        if (classData.length > 0) {
+          await postSheetData('addBatch', 'PBD_Data', classData);
+        }
       }
-    }
-  }, []);
+    });
+  }, [runBackgroundSync]);
 
   const deletePBDClass = useCallback((pbdType: 'PBD Pertengahan' | 'PBD Akhir', kelas: string) => {
     setData(prev => {
@@ -266,21 +293,19 @@ export const useDataStoreValue = () => {
       };
     });
     
-    postSheetData('deleteClassPBD', 'PBD_Data', { pbdType, kelas });
-  }, []);
+    runBackgroundSync(() => postSheetData('deleteClassPBD', 'PBD_Data', { pbdType, kelas }));
+  }, [runBackgroundSync]);
 
   const updatePbdControl = useCallback((control: { pbd1Open: boolean; pbd2Open: boolean }) => {
     setData(prev => ({ ...prev, pbdControl: control }));
-    // Note: Assuming there is a 'saveControlSettings' action or similar in GAS. 
-    // Wait, GAS backend may not have this, so it will only persist locally if offline.
-    // If we wanted remote persistence, we'd need another sheet or something. 
-    // For now logging it locally / updating state is the instruction.
   }, []);
 
   return {
     ...data,
     isAdmin,
     isLoadingData,
+    isSyncing,
+    lastSyncTime,
     loadingProgress,
     loadingMessage,
     refreshData,

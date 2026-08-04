@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
-import { LayoutDashboard, Users, FileEdit, BarChart2, AlertCircle, FileText, Printer, Menu, LogIn, LogOut, X, Loader2, Settings, Award, RefreshCw } from 'lucide-react';
+import { LayoutDashboard, Users, FileEdit, BarChart2, AlertCircle, FileText, Printer, Menu, LogIn, LogOut, X, Loader2, Settings, Award, RefreshCw, CheckCircle2, Cloud } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useDataStore } from '../store/useDataStore';
 
@@ -11,7 +11,7 @@ export default function Layout() {
   const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState('');
   
-  const { isAdmin, isLoadingData, loadingProgress, loadingMessage, refreshData, loginAdmin, logoutAdmin } = useDataStore();
+  const { isAdmin, isLoadingData, isSyncing, lastSyncTime, loadingProgress, loadingMessage, refreshData, loginAdmin, logoutAdmin } = useDataStore();
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -102,14 +102,31 @@ export default function Layout() {
               SISTEM ANALISIS INTERVENSI AKADEMIK SEKOLAH
             </h1>
           </div>
-          <div className="flex items-center gap-4 sm:gap-6">
+          <div className="flex items-center gap-3 sm:gap-5">
+            {/* Sync status indicator */}
+            <div className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-900/40 border border-blue-800/60 text-xs font-semibold">
+              {isSyncing ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 text-amber-400 animate-spin" />
+                  <span className="text-amber-300">Menyimpan ke database...</span>
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                  <span className="text-emerald-300">
+                    Disimpan dalam Cache {lastSyncTime ? `(${lastSyncTime})` : ''}
+                  </span>
+                </>
+              )}
+            </div>
+
             <button
-              onClick={() => refreshData()}
-              disabled={isLoadingData}
+              onClick={() => refreshData(true)}
+              disabled={isSyncing || isLoadingData}
               title="Segarkan data dari database Google Sheet"
-              className="p-2 bg-blue-900/60 hover:bg-blue-800 text-blue-200 hover:text-white rounded-lg border border-blue-700/50 transition-all flex items-center gap-1.5 text-xs font-semibold"
+              className="p-2 bg-blue-900/60 hover:bg-blue-800 text-blue-200 hover:text-white rounded-lg border border-blue-700/50 transition-all flex items-center gap-1.5 text-xs font-semibold disabled:opacity-50"
             >
-              <RefreshCw className={`w-4 h-4 ${isLoadingData ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-4 h-4 ${isSyncing || isLoadingData ? 'animate-spin' : ''}`} />
               <span className="hidden lg:inline">Segarkan Sheet</span>
             </button>
             <div className="text-sm font-bold text-blue-200 hidden md:block tracking-wide">{currentDate}</div>
