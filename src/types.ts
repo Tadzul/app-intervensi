@@ -82,6 +82,88 @@ export const PANITIA_LIST = [
   "PANITIA MORAL"
 ] as const;
 
+export function canonicalSubjectName(subject: string): string {
+  if (!subject) return '';
+  const s = subject.toLowerCase().trim().replace(/\s+/g, ' ');
+
+  if (s === 'bm' || s.includes('bahasa melayu') || s.includes('bahasa malaysia') || s === 'b.melayu' || s === 'b melayu') {
+    return 'Bahasa Melayu';
+  }
+  if (s === 'bi' || s.includes('bahasa inggeris') || s.includes('english') || s === 'b.inggeris' || s === 'b inggeris') {
+    return 'Bahasa Inggeris';
+  }
+  if (s === 'mt' || s.includes('matematik') || s.includes('math')) {
+    return 'Matematik';
+  }
+  if (s === 'sn' || s.includes('sains') || s.includes('science')) {
+    return 'Sains';
+  }
+  if (s === 'ba' || s.includes('bahasa arab') || s === 'b.arab' || s === 'b arab') {
+    return 'Bahasa Arab';
+  }
+  if (s === 'pi' || s === 'pa' || s.includes('pendidikan islam') || s.includes('agama islam') || s.includes('pend islam')) {
+    return 'Pendidikan Islam';
+  }
+  if (s === 'pjpk' || s === 'pjk' || s === 'pj' || s === 'pk' || s.includes('jasmani') || s.includes('kesihatan')) {
+    return 'PJPK';
+  }
+  if (s === 'psv' || s.includes('seni') || s.includes('visual') || s === 'p.seni') {
+    return 'PSV';
+  }
+  if (s === 'rbt' || s.includes('reka bentuk')) {
+    return 'RBT';
+  }
+  if (s === 'sej' || s.includes('sejarah')) {
+    return 'Sejarah';
+  }
+  if (s === 'muzik' || s.includes('muzik') || s === 'mz') {
+    return 'Muzik';
+  }
+  if (s === 'moral' || s.includes('moral')) {
+    return 'Moral';
+  }
+
+  return subject.trim();
+}
+
+export function isSameSubject(a: string, b: string): boolean {
+  if (!a || !b) return false;
+  if (a.toLowerCase().trim() === b.toLowerCase().trim()) return true;
+  return canonicalSubjectName(a) === canonicalSubjectName(b);
+}
+
+export function getSubjectTP(
+  mataPelajaranMap: Record<string, number> | undefined, 
+  targetSubject: string
+): number | undefined {
+  if (!mataPelajaranMap || typeof mataPelajaranMap !== 'object') return undefined;
+
+  if (mataPelajaranMap[targetSubject] !== undefined) {
+    const val = Number(mataPelajaranMap[targetSubject]);
+    if (!isNaN(val) && val > 0) return val;
+  }
+
+  const targetClean = targetSubject.toLowerCase().trim();
+  const targetCanon = canonicalSubjectName(targetSubject);
+  const keys = Object.keys(mataPelajaranMap);
+
+  for (const k of keys) {
+    if (k.toLowerCase().trim() === targetClean) {
+      const val = Number(mataPelajaranMap[k]);
+      if (!isNaN(val) && val > 0) return val;
+    }
+  }
+
+  for (const k of keys) {
+    if (canonicalSubjectName(k) === targetCanon) {
+      const val = Number(mataPelajaranMap[k]);
+      if (!isNaN(val) && val > 0) return val;
+    }
+  }
+
+  return undefined;
+}
+
 export function matchesPanitia(subjectName: string, panitiaName: string): boolean {
   if (!subjectName) return false;
   if (!panitiaName || panitiaName === "Semua Panitia") return true;
@@ -203,7 +285,7 @@ export function isInterventionByTeacher(inv: Intervention, teacher: Teacher, sub
   // Cross reference with subjects if available
   if (subjects && subjects.length > 0) {
     const teacherSubjects = subjects.filter(s => String(s.teacherId).trim() === tId || s.teacherId.toLowerCase().trim() === tName);
-    const isSubjectMatch = teacherSubjects.some(s => s.kelas === inv.kelas && s.mataPelajaran === inv.mataPelajaran);
+    const isSubjectMatch = teacherSubjects.some(s => s.kelas === inv.kelas && isSameSubject(s.mataPelajaran, inv.mataPelajaran));
     if (isSubjectMatch) return true;
   }
 

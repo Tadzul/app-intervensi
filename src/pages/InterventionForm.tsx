@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useDataStore } from '../store/useDataStore';
-import { PUNCA_OPTIONS, PELAN_OPTIONS, Intervention, isInterventionByTeacher } from '../types';
+import { PUNCA_OPTIONS, PELAN_OPTIONS, Intervention, isInterventionByTeacher, getSubjectTP } from '../types';
 import { CheckCircle2, AlertCircle } from 'lucide-react';
 
 export default function InterventionForm() {
@@ -60,7 +60,7 @@ export default function InterventionForm() {
         let cTp1 = 0, cTp2 = 0, cTp3 = 0, cTp4 = 0, cTp5 = 0, cTp6 = 0;
 
         targetStudents.forEach(stu => {
-          const tpScore = stu.mataPelajaran[subjName];
+          const tpScore = getSubjectTP(stu.mataPelajaran, subjName);
           if (tpScore === 1) cTp1++;
           else if (tpScore === 2) cTp2++;
           else if (tpScore === 3) cTp3++;

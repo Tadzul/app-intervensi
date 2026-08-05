@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useDataStore } from '../store/useDataStore';
-import { TAHAP1_CLASSES, TAHAP2_CLASSES, TAHAP1_SUBJECTS, TAHAP2_SUBJECTS } from '../types';
+import { TAHAP1_CLASSES, TAHAP2_CLASSES, TAHAP1_SUBJECTS, TAHAP2_SUBJECTS, getSubjectTP } from '../types';
 
 export default function SubjectAnalysis() {
   const { studentsPBD = [] } = useDataStore();
@@ -43,8 +43,8 @@ export default function SubjectAnalysis() {
       let bilDitaksir = 0;
       
       filteredStudents.forEach(stu => {
-        const val = stu.mataPelajaran?.[sub];
-        if (val !== undefined) {
+        const val = getSubjectTP(stu.mataPelajaran, sub);
+        if (val !== undefined && val > 0) {
           bilDitaksir++;
           if (val === 1) tp1++;
           if (val === 2) tp2++;

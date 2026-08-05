@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useDataStore } from '../store/useDataStore';
-import { TAHAP1_SUBJECTS, TAHAP2_SUBJECTS } from '../types';
+import { TAHAP1_SUBJECTS, TAHAP2_SUBJECTS, getSubjectTP } from '../types';
 import { Award, Filter, ArrowUp, ArrowDown, Search } from 'lucide-react';
 
 export default function TopStudents() {
@@ -31,12 +31,12 @@ export default function TopStudents() {
 
     // Calculate total/average TP for sorting
     const dataWithStats = data.map(student => {
-      const subjects = student.mataPelajaran || {};
       let totalTP = 0;
       let count = 0;
       subjectList.forEach(sub => {
-        if (subjects[sub] > 0) {
-          totalTP += subjects[sub];
+        const val = getSubjectTP(student.mataPelajaran, sub);
+        if (val && val > 0) {
+          totalTP += val;
           count++;
         }
       });
@@ -179,7 +179,7 @@ export default function TopStudents() {
                       </span>
                     </td>
                     {subjectList.map(sub => {
-                      const tp = student.mataPelajaran?.[sub] || 0;
+                      const tp = getSubjectTP(student.mataPelajaran, sub) || 0;
                       return (
                         <td key={sub} className="px-2 py-4 text-center">
                           {tp > 0 ? (

@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useDataStore } from '../store/useDataStore';
-import { TAHAP1_SUBJECTS, TAHAP2_SUBJECTS } from '../types';
+import { TAHAP1_SUBJECTS, TAHAP2_SUBJECTS, getSubjectTP } from '../types';
 import { User, Filter, ArrowUp, ArrowDown, Search } from 'lucide-react';
 
 export default function StudentAnalysis() {
@@ -39,8 +39,8 @@ export default function StudentAnalysis() {
 
     // Sort by TP for the selected subject
     data.sort((a, b) => {
-      const tpA = a.mataPelajaran?.[mataPelajaran] || 0;
-      const tpB = b.mataPelajaran?.[mataPelajaran] || 0;
+      const tpA = getSubjectTP(a.mataPelajaran, mataPelajaran) || 0;
+      const tpB = getSubjectTP(b.mataPelajaran, mataPelajaran) || 0;
       
       if (sortOrder === 'desc') {
         return tpB - tpA;
@@ -54,13 +54,12 @@ export default function StudentAnalysis() {
   // Statistics
   const highestTP = useMemo(() => {
     if (filteredData.length === 0) return 0;
-    return Math.max(...filteredData.map(s => s.mataPelajaran?.[mataPelajaran] || 0));
+    return Math.max(...filteredData.map(s => getSubjectTP(s.mataPelajaran, mataPelajaran) || 0));
   }, [filteredData, mataPelajaran]);
 
   const lowestTP = useMemo(() => {
     if (filteredData.length === 0) return 0;
-    // Find min TP but ignore 0 (or consider it if they actually scored 0, but usually TP is 1-6)
-    const validTPs = filteredData.map(s => s.mataPelajaran?.[mataPelajaran] || 0).filter(tp => tp > 0);
+    const validTPs = filteredData.map(s => getSubjectTP(s.mataPelajaran, mataPelajaran) || 0).filter(tp => tp > 0);
     if (validTPs.length === 0) return 0;
     return Math.min(...validTPs);
   }, [filteredData, mataPelajaran]);
@@ -188,7 +187,7 @@ export default function StudentAnalysis() {
              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Murid TP 1-2</p>
              <p className="text-2xl font-black text-amber-600 mt-1">
                {filteredData.filter(s => {
-                 const tp = s.mataPelajaran?.[mataPelajaran] || 0;
+                 const tp = getSubjectTP(s.mataPelajaran, mataPelajaran) || 0;
                  return tp === 1 || tp === 2;
                }).length}
              </p>
@@ -207,7 +206,7 @@ export default function StudentAnalysis() {
             <tbody className="divide-y divide-slate-100">
               {filteredData.length > 0 ? (
                 filteredData.map((student, idx) => {
-                  const tp = student.mataPelajaran?.[mataPelajaran] || 0;
+                  const tp = getSubjectTP(student.mataPelajaran, mataPelajaran) || 0;
                   return (
                     <tr key={student.id} className="hover:bg-slate-50/50 transition-colors">
                       <td className="px-6 py-4 text-sm font-medium text-slate-400">{idx + 1}</td>

@@ -1,4 +1,4 @@
-import { Teacher, TeacherSubject, Intervention } from '../types';
+import { Teacher, TeacherSubject, Intervention, canonicalSubjectName } from '../types';
 
 export const GAS_URL = import.meta.env.VITE_GAS_WEB_APP_URL || "https://script.google.com/macros/s/AKfycbx-_zGV8XwFiW6jiiBUYO5q4-ZLA1aVyuRhSMcu77LBcZkmOxRjE0Z-XBssaHs_tzxL/exec";
 export const TEACHERS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQlI0JjpoVeIRm94wjOh3G_0zn-2lyZqFJ5x96O73YBpIejb6gcgPmCxjBEiY6BnUINmU71VgMlFfbn/pub?gid=1610694992&single=true&output=csv";
@@ -317,17 +317,46 @@ export async function loadInitialData(onProgress?: (progress: number, message: s
 
   // Decode PBD data
   const pbdData = pbdRaw.map((pbd: any, index: number) => {
-    let mataPelajaran = {};
+    let rawMataPelajaran: Record<string, any> = {};
     try {
       const rawMp = getRawVal(pbd, ['mataPelajaran', 'matapelajaran', 'Mata Pelajaran', 'subjects', 'MataPelajaran']);
       if (typeof rawMp === 'string') {
-        mataPelajaran = JSON.parse(rawMp);
+        rawMataPelajaran = JSON.parse(rawMp);
       } else if (rawMp && typeof rawMp === 'object') {
-        mataPelajaran = rawMp;
+        rawMataPelajaran = { ...rawMp };
       }
     } catch(e) {
       console.error('Failed parsing mataPelajaran mapping', e);
     }
+
+    // Scan flat keys if pbd is an object with subject columns
+    if (pbd && typeof pbd === 'object') {
+      const knownKeys = ['id', 'ID', 'Id', 'nama', 'Nama', 'name', 'Name', 'Nama Murid', 'NAMA', 'pbdType', 'pbdtype', 'PBDType', 'PbdType', 'Sesi PBD', 'kelas', 'Kelas', 'KELAS', 'tahap', 'Tahap', 'TAHAP', 'mataPelajaran', 'matapelajaran', 'Mata Pelajaran', 'subjects', 'MataPelajaran'];
+      Object.keys(pbd).forEach(k => {
+        if (!knownKeys.includes(k)) {
+          const val = Number(pbd[k]);
+          if (!isNaN(val) && val >= 1 && val <= 6) {
+            rawMataPelajaran[k] = val;
+          }
+        }
+      });
+    }
+
+    // Build case-insensitive, space-insensitive and canonical normalized mapping
+    const mataPelajaran: Record<string, number> = {};
+    Object.entries(rawMataPelajaran).forEach(([k, v]) => {
+      const numVal = Number(v);
+      if (!isNaN(numVal) && numVal > 0) {
+        const cleanK = k.trim();
+        mataPelajaran[k] = numVal;
+        mataPelajaran[cleanK] = numVal;
+        mataPelajaran[cleanK.toLowerCase()] = numVal;
+        mataPelajaran[cleanK.toUpperCase()] = numVal;
+        const canon = canonicalSubjectName(cleanK);
+        if (canon) mataPelajaran[canon] = numVal;
+      }
+    });
+
     const id = getRawVal(pbd, ['id', 'ID', 'Id']) || String(index + 1);
     const nama = getRawVal(pbd, ['nama', 'Nama', 'name', 'Name', 'Nama Murid', 'NAMA']) || '';
     const pbdVal = getRawVal(pbd, ['pbdType', 'pbdtype', 'PBDType', 'PbdType', 'Sesi PBD']) || 'PBD Pertengahan';
