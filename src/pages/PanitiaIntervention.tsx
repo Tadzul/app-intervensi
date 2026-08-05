@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useDataStore } from '../store/useDataStore';
-import { PANITIA_LIST, matchesPanitia } from '../types';
+import { PANITIA_LIST, matchesPanitia, resolveTeacherName } from '../types';
 import { Printer, Download, Filter, Search, Layers, BookOpen, CheckCircle2, Users, FileText, AlertTriangle, Sparkles } from 'lucide-react';
 
 export default function PanitiaIntervention() {
@@ -42,7 +42,7 @@ export default function PanitiaIntervention() {
       // Search Query
       if (searchQuery.trim()) {
         const query = searchQuery.toLowerCase().trim();
-        const teacherName = (teacherMap.get(String(inv.teacherId)) || '').toLowerCase();
+        const teacherName = resolveTeacherName(inv.teacherId, teachers).toLowerCase();
         const kelas = inv.kelas.toLowerCase();
         const isu = inv.isu.toLowerCase();
         const pelan = inv.pelanIntervensi.toLowerCase();
@@ -136,7 +136,7 @@ export default function PanitiaIntervention() {
     }>();
 
     filteredInterventions.forEach(inv => {
-      const teacherName = teacherMap.get(String(inv.teacherId)) || 'Guru';
+      const teacherName = resolveTeacherName(inv.teacherId, teachers);
       const rawPlans = inv.pelanIntervensi ? inv.pelanIntervensi.split('\n') : [];
       
       if (inv.pelanIntervensiLain) {
@@ -189,7 +189,7 @@ export default function PanitiaIntervention() {
     let csv = "TAHUN/KELAS,SESI PBD,GURU MATA PELAJARAN,MATA PELAJARAN,TP1,TP2,TP3,TP4,TP5,TP6,JUMLAH,TAJUK BELUM DIKUASAI,ISU,PUNCA,CADANGAN INTERVENSI\n";
 
     filteredInterventions.forEach(inv => {
-      const teacherName = teacherMap.get(String(inv.teacherId)) || '-';
+      const teacherName = resolveTeacherName(inv.teacherId, teachers);
       const total = inv.tp1 + inv.tp2 + inv.tp3 + inv.tp4 + inv.tp5 + inv.tp6;
       const puncaStr = inv.punca.join('; ') + (inv.puncaLain ? `; ${inv.puncaLain}` : '');
       const tajukClean = `"${(inv.tajukBelumDikuasai || '').replace(/"/g, '""')}"`;
@@ -488,7 +488,7 @@ export default function PanitiaIntervention() {
                     </thead>
                     <tbody>
                       {list.map((inv) => {
-                        const teacherName = teacherMap.get(String(inv.teacherId)) || 'Guru Tidak Dinyatakan';
+                        const teacherName = resolveTeacherName(inv.teacherId, teachers);
                         const total = inv.tp1 + inv.tp2 + inv.tp3 + inv.tp4 + inv.tp5 + inv.tp6;
                         const puncaCombined = [...inv.punca, inv.puncaLain].filter(Boolean).join(', ');
 

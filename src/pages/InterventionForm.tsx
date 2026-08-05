@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useDataStore } from '../store/useDataStore';
-import { PUNCA_OPTIONS, PELAN_OPTIONS, Intervention } from '../types';
+import { PUNCA_OPTIONS, PELAN_OPTIONS, Intervention, isInterventionByTeacher } from '../types';
 import { CheckCircle2, AlertCircle } from 'lucide-react';
 
 export default function InterventionForm() {
@@ -36,8 +36,9 @@ export default function InterventionForm() {
     
     if (filterPbdType && s.pbdType !== filterPbdType) return false;
 
+    const currentTeacher = teachers.find(t => String(t.id) === String(selectedTeacherId));
     const hasIntervention = interventions.some(inv => 
-      String(inv.teacherId) === String(s.teacherId) && 
+      (currentTeacher ? isInterventionByTeacher(inv, currentTeacher) : String(inv.teacherId) === String(s.teacherId)) && 
       inv.kelas === s.kelas && 
       inv.mataPelajaran === s.mataPelajaran &&
       inv.pbdType === s.pbdType

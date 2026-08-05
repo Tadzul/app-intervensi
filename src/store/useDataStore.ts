@@ -135,12 +135,30 @@ export const useDataStoreValue = () => {
 
         // Smart merge / dedup for interventions
         const interventionsMap = new Map<string, Intervention>();
+        
+        // Primary: Remote database items
         remoteData.interventions.forEach(i => {
-          interventionsMap.set(String(i.id), i);
-        });
-        (prev.interventions || []).forEach(i => {
-          if (!interventionsMap.has(String(i.id))) {
+          if (i && i.id) {
             interventionsMap.set(String(i.id), i);
+          }
+        });
+
+        // Secondary: Local unsynced items
+        (prev.interventions || []).forEach(i => {
+          if (!i || !i.id) return;
+          const strId = String(i.id);
+          // Check if already in remote by ID or by composite key
+          const existsById = interventionsMap.has(strId);
+          const existsByKey = Array.from(interventionsMap.values()).some(
+            remoteInv => 
+              remoteInv.kelas === i.kelas && 
+              remoteInv.mataPelajaran === i.mataPelajaran && 
+              remoteInv.pbdType === i.pbdType && 
+              (remoteInv.teacherId === i.teacherId || remoteInv.id === i.id)
+          );
+
+          if (!existsById && !existsByKey) {
+            interventionsMap.set(strId, i);
           }
         });
 

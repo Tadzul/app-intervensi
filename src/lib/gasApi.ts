@@ -22,6 +22,24 @@ function parseCSVLine(text: string): string[] {
   return result.map(s => s.replace(/^"|"$/g, '').trim());
 }
 
+function getRawVal(obj: any, keys: string[]): any {
+  if (!obj || typeof obj !== 'object') return undefined;
+  for (const k of keys) {
+    if (obj[k] !== undefined && obj[k] !== null && String(obj[k]).trim() !== '') {
+      return obj[k];
+    }
+  }
+  const objKeys = Object.keys(obj);
+  for (const k of keys) {
+    const cleanK = k.toLowerCase().replace(/[\s_]/g, '');
+    const foundKey = objKeys.find(ok => ok.toLowerCase().replace(/[\s_]/g, '') === cleanK);
+    if (foundKey && obj[foundKey] !== undefined && obj[foundKey] !== null && String(obj[foundKey]).trim() !== '') {
+      return obj[foundKey];
+    }
+  }
+  return undefined;
+}
+
 export async function fetchTeachersCSV(): Promise<Teacher[]> {
   try {
     const res = await fetch(`${TEACHERS_CSV_URL}&_t=${Date.now()}`, { cache: 'no-store' });
@@ -154,9 +172,9 @@ export async function loadInitialData(onProgress?: (progress: number, message: s
 
   // Robust header mapping for Teachers from GAS API
   const apiTeachersData: Teacher[] = teachersRaw.map((t: any, index: number) => {
-    const id = t.id || t.ID || t.Id || t.id_guru || t.ID_Guru || t.idGuru || String(index + 1);
-    const name = t.name || t.Name || t.nama || t.Nama || t.nama_guru || t.Nama_Guru || t['Nama Guru'] || t['NAMA GURU'] || t['NAMA'] || '';
-    const email = t.email || t.Email || t.emel || t.Emel || t.email_guru || t['Emel Guru'] || t['EMEL'] || '';
+    const id = getRawVal(t, ['id', 'ID', 'Id', 'id_guru', 'ID_Guru', 'idGuru']) || String(index + 1);
+    const name = getRawVal(t, ['name', 'Name', 'nama', 'Nama', 'nama_guru', 'Nama_Guru', 'Nama Guru', 'NAMA GURU', 'NAMA']) || '';
+    const email = getRawVal(t, ['email', 'Email', 'emel', 'Emel', 'email_guru', 'Emel Guru', 'EMEL']) || '';
     return {
       id: String(id),
       name: String(name).trim(),
@@ -164,24 +182,65 @@ export async function loadInitialData(onProgress?: (progress: number, message: s
     };
   }).filter(t => t.name !== '');
 
-  // Merge Teachers from both API and Published CSV
+  // Merge Teachers from API, Published CSV, Subjects, and Interventions
   const teachersMap = new Map<string, Teacher>();
+  const addOrMergeTeacher = (id: string, name: string, email: string = '') => {
+    if (!name || name.trim() === '') return;
+    const cleanName = name.trim();
+    const cleanId = String(id || cleanName).trim();
+    const nameKey = cleanName.toLowerCase();
+
+    const existing = teachersMap.get(nameKey) || teachersMap.get(cleanId);
+    const finalObj: Teacher = {
+      id: cleanId !== nameKey ? cleanId : (existing?.id || cleanId),
+      name: cleanName,
+      email: email || existing?.email || ''
+    };
+
+    teachersMap.set(nameKey, finalObj);
+    teachersMap.set(cleanId, finalObj);
+    if (existing && existing.id) {
+      teachersMap.set(String(existing.id).trim(), finalObj);
+    }
+  };
+
   csvTeachers.forEach(t => {
-    if (t.name) teachersMap.set(t.name.toLowerCase().trim(), t);
+    addOrMergeTeacher(t.id, t.name, t.email);
   });
   apiTeachersData.forEach(t => {
-    if (t.name) teachersMap.set(t.name.toLowerCase().trim(), t);
+    addOrMergeTeacher(t.id, t.name, t.email);
   });
-  const teachersData = Array.from(teachersMap.values());
+
+  // Also extract teachers from raw subjects and interventions if any are referenced
+  subjectsRaw.forEach((sub: any) => {
+    const rawTeacherId = getRawVal(sub, ['teacherId', 'teacherid', 'TeacherId', 'id_guru', 'ID_Guru', 'idGuru', 'teacher_id']);
+    const rawTeacherName = getRawVal(sub, ['Nama Guru', 'nama_guru', 'Nama', 'guru', 'Guru', 'NAMA GURU']);
+    if (rawTeacherName && rawTeacherName.trim()) {
+      addOrMergeTeacher(rawTeacherId, rawTeacherName);
+    }
+  });
+
+  interventionsRaw.forEach((inter: any) => {
+    const rawTeacherId = getRawVal(inter, ['teacherId', 'teacherid', 'TeacherId', 'id_guru', 'ID_Guru', 'idGuru', 'ID Guru']);
+    const rawTeacherName = getRawVal(inter, ['Nama Guru', 'nama_guru', 'namaGuru', 'NamaGuru', 'Nama', 'NAMA GURU', 'guru', 'Guru']);
+    if (rawTeacherName && rawTeacherName.trim() && !/^\d+$/.test(rawTeacherName.trim())) {
+      addOrMergeTeacher(rawTeacherId, rawTeacherName);
+    }
+  });
+
+  // Deduplicate unique teacher objects
+  const uniqueTeachers = new Set<Teacher>();
+  teachersMap.forEach(t => uniqueTeachers.add(t));
+  const teachersData = Array.from(uniqueTeachers);
 
   // Robust header mapping for Subjects
   const subjectsData: TeacherSubject[] = subjectsRaw.map((sub: any, index: number) => {
-    const id = sub.id || sub.ID || sub.Id || String(index + 1);
-    const teacherId = sub.teacherId || sub.teacherid || sub.TeacherId || sub.id_guru || sub.ID_Guru || sub.idGuru || sub.teacher_id || '';
-    const tahap = sub.tahap || sub.Tahap || 'Tahap 1';
-    const kelas = sub.kelas || sub.Kelas || '';
-    const mataPelajaran = sub.mataPelajaran || sub.matapelajaran || sub['Mata Pelajaran'] || sub.subject || sub.Subject || '';
-    const pbdVal = sub.pbdType || sub.pbdtype || sub.PBDType || sub.PbdType || sub['Sesi PBD'] || sub['pbd_type'] || 'PBD Pertengahan';
+    const id = getRawVal(sub, ['id', 'ID', 'Id']) || String(index + 1);
+    const teacherId = getRawVal(sub, ['teacherId', 'teacherid', 'TeacherId', 'id_guru', 'ID_Guru', 'idGuru', 'teacher_id', 'Nama Guru', 'nama_guru', 'Nama', 'guru']) || '';
+    const tahap = getRawVal(sub, ['tahap', 'Tahap', 'TAHAP']) || 'Tahap 1';
+    const kelas = getRawVal(sub, ['kelas', 'Kelas', 'KELAS']) || '';
+    const mataPelajaran = getRawVal(sub, ['mataPelajaran', 'matapelajaran', 'Mata Pelajaran', 'subject', 'Subject', 'Subjek']) || '';
+    const pbdVal = getRawVal(sub, ['pbdType', 'pbdtype', 'PBDType', 'PbdType', 'Sesi PBD', 'pbd_type']) || 'PBD Pertengahan';
     return {
       id: String(id),
       teacherId: String(teacherId),
@@ -194,65 +253,86 @@ export async function loadInitialData(onProgress?: (progress: number, message: s
 
   // Decode array fields and normalize Interventions
   const interventionsData: Intervention[] = interventionsRaw.map((inter: any, index: number) => {
-    let punca = [];
+    const rawPunca = getRawVal(inter, ['punca', 'Punca', 'puncaUtama', 'Punca Utama', 'PUNCA']);
+    let punca: string[] = [];
     try {
-      if (typeof inter.punca === 'string') {
-        punca = JSON.parse(inter.punca);
-      } else if (Array.isArray(inter.punca)) {
-        punca = inter.punca;
+      if (typeof rawPunca === 'string') {
+        if (rawPunca.startsWith('[') && rawPunca.endsWith(']')) {
+          punca = JSON.parse(rawPunca);
+        } else if (rawPunca.includes(';')) {
+          punca = rawPunca.split(';').map(s => s.trim()).filter(Boolean);
+        } else if (rawPunca.includes(',')) {
+          punca = rawPunca.split(',').map(s => s.trim()).filter(Boolean);
+        } else {
+          punca = [rawPunca.trim()];
+        }
+      } else if (Array.isArray(rawPunca)) {
+        punca = rawPunca;
       }
     } catch(e) {
-      if(inter.punca) punca = [String(inter.punca)];
+      if (rawPunca) punca = [String(rawPunca)];
     }
-    const id = inter.id || inter.ID || inter.Id || String(index + 1);
-    const teacherId = inter.teacherId || inter.teacherid || inter.TeacherId || inter.id_guru || inter.ID_Guru || inter.idGuru || '';
-    const pbdVal = inter.pbdType || inter.pbdtype || inter.PBDType || inter.PbdType || inter['Sesi PBD'] || 'PBD Pertengahan';
-    const date = inter.date || inter.Date || inter.tarikh || inter.Tarikh || new Date().toISOString().split('T')[0];
-    const tahap = inter.tahap || inter.Tahap || '';
-    const kelas = inter.kelas || inter.Kelas || '';
-    const mataPelajaran = inter.mataPelajaran || inter.matapelajaran || inter['Mata Pelajaran'] || '';
+
+    const rawId = getRawVal(inter, ['id', 'ID', 'Id', 'id_intervensi', 'ID_Intervensi', 'idIntervensi', 'ID Intervensi', 'no', 'bil']);
+    const teacherId = getRawVal(inter, ['teacherId', 'teacherid', 'TeacherId', 'id_guru', 'ID_Guru', 'idGuru', 'ID Guru', 'Nama Guru', 'nama_guru', 'namaGuru', 'NamaGuru', 'Nama', 'NAMA GURU', 'guru', 'Guru', 'email_guru', 'Emel Guru', 'Emel']) || '';
+    const pbdVal = getRawVal(inter, ['pbdType', 'pbdtype', 'PBDType', 'PbdType', 'pbd_type', 'Sesi PBD', 'SESI PBD', 'Sesi', 'PBD', 'sesiPBD']) || 'PBD Pertengahan';
+    const date = getRawVal(inter, ['date', 'Date', 'tarikh', 'Tarikh', 'TARIKH', 'timestamp', 'Timestamp', 'tarikhMasa', 'Tarikh Masa']) || new Date().toISOString().split('T')[0];
+    const tahap = getRawVal(inter, ['tahap', 'Tahap', 'TAHAP', 'Tahap Persekolahan']) || '';
+    const kelas = getRawVal(inter, ['kelas', 'Kelas', 'KELAS', 'Nama Kelas', 'Tingkatan']) || '';
+    const mataPelajaran = getRawVal(inter, ['mataPelajaran', 'matapelajaran', 'Mata Pelajaran', 'MATA PELAJARAN', 'subject', 'Subject', 'Subjek', 'SUBJEK', 'MataPelajaran', 'mp', 'MP']) || '';
+
+    const tajukBelumDikuasai = getRawVal(inter, ['tajukBelumDikuasai', 'tajuk', 'Tajuk', 'Tajuk Belum Dikuasai', 'TAJUK BELUM DIKUASAI', 'tajuk_belum_dikuasai', 'Tajuk Lemah']) || '';
+    const puncaLain = getRawVal(inter, ['puncaLain', 'Punca Lain', 'PUNCA LAIN', 'punca_lain']) || '';
+    const isu = getRawVal(inter, ['isu', 'Isu', 'ISU', 'Isu Utama', 'ISU UTAMA', 'Isu / Punca']) || '';
+    const pelanIntervensi = getRawVal(inter, ['pelanIntervensi', 'Pelan Intervensi', 'PELAN INTERVENSI', 'pelan', 'Pelan', 'Tindakan', 'TINDAKAN', 'Cadangan Intervensi', 'CADANGAN INTERVENSI', 'cadanganIntervensi', 'cadangan_intervensi']) || '';
+    const pelanIntervensiLain = getRawVal(inter, ['pelanIntervensiLain', 'Pelan Intervensi Lain', 'PELAN INTERVENSI LAIN', 'pelan_lain', 'Pelan Lain']) || '';
+    const catatan = getRawVal(inter, ['catatan', 'Catatan', 'CATATAN', 'Catatan Tambahan']) || '';
+
+    // Generate unique collision-free ID if rawId is missing
+    const finalId = rawId ? String(rawId) : `inv_${index + 1}_${kelas}_${mataPelajaran}_${pbdVal}`;
 
     return {
-      id: String(id),
+      id: finalId,
       date: String(date),
       teacherId: String(teacherId),
       tahap: String(tahap),
       kelas: String(kelas),
       mataPelajaran: String(mataPelajaran),
-      pbdType: pbdVal,
-      tp1: Number(inter.tp1 || inter.TP1 || 0),
-      tp2: Number(inter.tp2 || inter.TP2 || 0),
-      tp3: Number(inter.tp3 || inter.TP3 || 0),
-      tp4: Number(inter.tp4 || inter.TP4 || 0),
-      tp5: Number(inter.tp5 || inter.TP5 || 0),
-      tp6: Number(inter.tp6 || inter.TP6 || 0),
-      tajukBelumDikuasai: inter.tajukBelumDikuasai || inter.tajuk || inter['Tajuk Belum Dikuasai'] || '',
+      pbdType: String(pbdVal),
+      tp1: Number(getRawVal(inter, ['tp1', 'TP1', 'Tp1', 'TP 1', 'tp_1']) || 0),
+      tp2: Number(getRawVal(inter, ['tp2', 'TP2', 'Tp2', 'TP 2', 'tp_2']) || 0),
+      tp3: Number(getRawVal(inter, ['tp3', 'TP3', 'Tp3', 'TP 3', 'tp_3']) || 0),
+      tp4: Number(getRawVal(inter, ['tp4', 'TP4', 'Tp4', 'TP 4', 'tp_4']) || 0),
+      tp5: Number(getRawVal(inter, ['tp5', 'TP5', 'Tp5', 'TP 5', 'tp_5']) || 0),
+      tp6: Number(getRawVal(inter, ['tp6', 'TP6', 'Tp6', 'TP 6', 'tp_6']) || 0),
+      tajukBelumDikuasai: String(tajukBelumDikuasai),
       punca: Array.isArray(punca) ? punca : [],
-      puncaLain: inter.puncaLain || inter['Punca Lain'] || '',
-      isu: inter.isu || inter.Isu || inter['Isu'] || '',
-      pelanIntervensi: inter.pelanIntervensi || inter['Pelan Intervensi'] || inter.pelan || '',
-      pelanIntervensiLain: inter.pelanIntervensiLain || inter['Pelan Intervensi Lain'] || '',
-      catatan: inter.catatan || inter.Catatan || ''
+      puncaLain: String(puncaLain),
+      isu: String(isu),
+      pelanIntervensi: String(pelanIntervensi),
+      pelanIntervensiLain: String(pelanIntervensiLain),
+      catatan: String(catatan)
     };
-  });
+  }).filter(inv => inv.kelas !== '' || inv.mataPelajaran !== '' || inv.teacherId !== '' || inv.isu !== '' || inv.pelanIntervensi !== '');
 
   // Decode PBD data
   const pbdData = pbdRaw.map((pbd: any, index: number) => {
     let mataPelajaran = {};
     try {
-      if (typeof pbd.mataPelajaran === 'string') {
-        mataPelajaran = JSON.parse(pbd.mataPelajaran);
-      } else if (pbd.mataPelajaran && typeof pbd.mataPelajaran === 'object') {
-        mataPelajaran = pbd.mataPelajaran;
+      const rawMp = getRawVal(pbd, ['mataPelajaran', 'matapelajaran', 'Mata Pelajaran', 'subjects', 'MataPelajaran']);
+      if (typeof rawMp === 'string') {
+        mataPelajaran = JSON.parse(rawMp);
+      } else if (rawMp && typeof rawMp === 'object') {
+        mataPelajaran = rawMp;
       }
     } catch(e) {
       console.error('Failed parsing mataPelajaran mapping', e);
     }
-    const id = pbd.id || pbd.ID || String(index + 1);
-    const nama = pbd.nama || pbd.Nama || pbd.name || pbd.Name || pbd['Nama Murid'] || pbd['NAMA'] || '';
-    const pbdVal = pbd.pbdType || pbd.pbdtype || pbd.PBDType || pbd.PbdType || pbd['Sesi PBD'] || 'PBD Pertengahan';
-    const kelas = pbd.kelas || pbd.Kelas || '';
-    const tahap = pbd.tahap || pbd.Tahap || '';
+    const id = getRawVal(pbd, ['id', 'ID', 'Id']) || String(index + 1);
+    const nama = getRawVal(pbd, ['nama', 'Nama', 'name', 'Name', 'Nama Murid', 'NAMA']) || '';
+    const pbdVal = getRawVal(pbd, ['pbdType', 'pbdtype', 'PBDType', 'PbdType', 'Sesi PBD']) || 'PBD Pertengahan';
+    const kelas = getRawVal(pbd, ['kelas', 'Kelas', 'KELAS']) || '';
+    const tahap = getRawVal(pbd, ['tahap', 'Tahap', 'TAHAP']) || '';
 
     return {
       id: String(id),
@@ -260,7 +340,7 @@ export async function loadInitialData(onProgress?: (progress: number, message: s
       tahap: String(tahap),
       kelas: String(kelas),
       mataPelajaran,
-      pbdType: pbdVal
+      pbdType: String(pbdVal)
     };
   }).filter(p => p.nama !== '');
 

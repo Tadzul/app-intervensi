@@ -3,6 +3,7 @@ import { useDataStore } from '../store/useDataStore';
 import { Download, Printer, Search, Trash2 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
+import { resolveTeacherName, isInterventionByTeacher } from '../types';
 
 export default function Reports({ printMode = false }: { printMode?: boolean }) {
   const { teachers, subjects, interventions, isAdmin, deleteIntervention } = useDataStore();
@@ -14,16 +15,17 @@ export default function Reports({ printMode = false }: { printMode?: boolean }) 
 
   const filteredInterventions = useMemo(() => {
     return interventions.filter(inv => {
-      const t = teachers.find(x => String(x.id) === String(inv.teacherId));
+      const teacherName = resolveTeacherName(inv.teacherId, teachers);
       const matchesSearch = 
         !searchTerm || 
-        t?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        teacherName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         inv.kelas.toLowerCase().includes(searchTerm.toLowerCase()) ||
         inv.mataPelajaran.toLowerCase().includes(searchTerm.toLowerCase()) ||
         inv.isu?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         inv.punca?.join(' ').toLowerCase().includes(searchTerm.toLowerCase());
 
-      const matchesTeacher = !filterTeacher || String(inv.teacherId) === String(filterTeacher);
+      const selectedTeacher = teachers.find(t => String(t.id) === String(filterTeacher));
+      const matchesTeacher = !filterTeacher || (selectedTeacher ? isInterventionByTeacher(inv, selectedTeacher) : String(inv.teacherId) === String(filterTeacher));
       const matchesClass = !filterClass || inv.kelas === filterClass;
       const matchesSubject = !filterSubject || inv.mataPelajaran === filterSubject;
       const matchesPbd = !filterPbdType || inv.pbdType === filterPbdType;
@@ -48,10 +50,10 @@ export default function Reports({ printMode = false }: { printMode?: boolean }) 
     ];
 
     filteredInterventions.forEach(inv => {
-      const t = teachers.find(x => String(x.id) === String(inv.teacherId));
+      const teacherName = resolveTeacherName(inv.teacherId, teachers);
       rows.push([
         inv.date,
-        `"${t?.name || ''}"`,
+        `"${teacherName}"`,
         `"${inv.kelas}"`,
         `"${inv.mataPelajaran}"`,
         inv.tp1.toString(), inv.tp2.toString(), inv.tp3.toString(),
@@ -184,7 +186,7 @@ export default function Reports({ printMode = false }: { printMode?: boolean }) 
         {filteredInterventions.length > 0 ? (
           <div className="space-y-12">
             {filteredInterventions.map((inv, idx) => {
-              const teacher = teachers.find(t => String(t.id) === String(inv.teacherId));
+              const teacherName = resolveTeacherName(inv.teacherId, teachers);
               const total = inv.tp1 + inv.tp2 + inv.tp3 + inv.tp4 + inv.tp5 + inv.tp6;
               const tp12 = inv.tp1 + inv.tp2;
               const tp12P = total > 0 ? ((tp12/total)*100).toFixed(0) : 0;
@@ -195,7 +197,7 @@ export default function Reports({ printMode = false }: { printMode?: boolean }) 
                     <div>
                       <h3 className="font-bold text-lg text-slate-900">{inv.kelas} - {inv.mataPelajaran}</h3>
                       <div className="text-sm text-slate-600 flex gap-4 mt-1">
-                        <span>Guru: <span className="font-semibold text-slate-800">{teacher?.name}</span></span>
+                        <span>Guru: <span className="font-semibold text-slate-800">{teacherName}</span></span>
                         <span>Tarikh: {inv.date}</span>
                       </div>
                     </div>

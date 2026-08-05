@@ -130,6 +130,86 @@ export function matchesPanitia(subjectName: string, panitiaName: string): boolea
   return s.includes(cleanP) || cleanP.includes(s);
 }
 
+export function resolveTeacherName(
+  teacherId: string, 
+  teachers: Teacher[], 
+  subjects?: TeacherSubject[], 
+  interventions?: Intervention[]
+): string {
+  if (!teacherId) return 'Guru Tidak Dinyatakan';
+  const tid = String(teacherId).trim();
+  
+  // 1. Match by ID
+  const byId = teachers.find(t => String(t.id).trim() === tid);
+  if (byId && byId.name) return byId.name;
+  
+  // 2. Match by Name
+  const tidLower = tid.toLowerCase();
+  const byName = teachers.find(t => t.name.toLowerCase().trim() === tidLower);
+  if (byName && byName.name) return byName.name;
+
+  // 3. Match by Email
+  const byEmail = teachers.find(t => t.email && t.email.toLowerCase().trim() === tidLower);
+  if (byEmail && byEmail.name) return byEmail.name;
+
+  // 4. Cross reference subjects if provided
+  if (subjects && subjects.length > 0) {
+    const subMatch = subjects.find(s => String(s.teacherId).trim() === tid);
+    if (subMatch) {
+      const t = teachers.find(x => String(x.id).trim() === String(subMatch.teacherId).trim() || x.name.toLowerCase().trim() === String(subMatch.teacherId).toLowerCase().trim());
+      if (t && t.name) return t.name;
+    }
+  }
+
+  // 5. Cross reference interventions if provided
+  if (interventions && interventions.length > 0) {
+    const invMatch = interventions.find(i => String(i.teacherId).trim() === tid);
+    if (invMatch) {
+      // Check if another teacher in `teachers` list matches this intervention's mataPelajaran and kelas from subjects
+      if (subjects && subjects.length > 0) {
+        const matchingSubject = subjects.find(s => s.kelas === invMatch.kelas && s.mataPelajaran === invMatch.mataPelajaran);
+        if (matchingSubject) {
+          const t = teachers.find(x => String(x.id).trim() === String(matchingSubject.teacherId).trim() || x.name.toLowerCase().trim() === String(matchingSubject.teacherId).toLowerCase().trim());
+          if (t && t.name) return t.name;
+        }
+      }
+    }
+  }
+
+  // 6. If tid is a numeric string (like timestamp 1782317403029)
+  if (/^\d+$/.test(tid)) {
+    // Check if any teacher in `teachers` list has a partial ID match
+    const partialMatch = teachers.find(t => String(t.id).trim().includes(tid) || tid.includes(String(t.id).trim()));
+    if (partialMatch && partialMatch.name) return partialMatch.name;
+  }
+
+  // 7. Fallback: Return tid
+  return tid;
+}
+
+export function isInterventionByTeacher(inv: Intervention, teacher: Teacher, subjects?: TeacherSubject[]): boolean {
+  if (!inv || !teacher) return false;
+  const invTid = String(inv.teacherId || '').trim();
+  if (!invTid) return false;
+
+  const tId = String(teacher.id).trim();
+  const tName = teacher.name.toLowerCase().trim();
+  const tEmail = teacher.email ? teacher.email.toLowerCase().trim() : '';
+
+  if (invTid === tId) return true;
+  if (invTid.toLowerCase() === tName) return true;
+  if (tEmail && invTid.toLowerCase() === tEmail) return true;
+
+  // Cross reference with subjects if available
+  if (subjects && subjects.length > 0) {
+    const teacherSubjects = subjects.filter(s => String(s.teacherId).trim() === tId || s.teacherId.toLowerCase().trim() === tName);
+    const isSubjectMatch = teacherSubjects.some(s => s.kelas === inv.kelas && s.mataPelajaran === inv.mataPelajaran);
+    if (isSubjectMatch) return true;
+  }
+
+  return false;
+}
+
 export const PUNCA_OPTIONS = [
   "Kehadiran Murid Rendah",
   "Tidak Menyiapkan Latihan",
