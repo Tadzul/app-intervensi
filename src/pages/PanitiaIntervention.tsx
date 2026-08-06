@@ -413,7 +413,8 @@ export default function PanitiaIntervention() {
               {proposedInterventionsSummary.map((item, index) => (
                 <div
                   key={index}
-                  className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-2 hover:border-amber-300 transition-all"
+                  className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-2 hover:border-amber-300 transition-all break-inside-avoid"
+                  style={{ pageBreakInside: 'avoid' }}
                 >
                   <div className="flex justify-between items-start gap-2">
                     <h4 className="font-bold text-slate-900 text-sm flex items-center gap-2">
@@ -466,7 +467,7 @@ export default function PanitiaIntervention() {
             if (list.length === 0) return null;
 
             return (
-              <div key={yearGroup} className="space-y-3 break-inside-avoid print-page-break">
+              <div key={yearGroup} className="space-y-3">
                 <div className="flex items-center gap-3 bg-blue-950 text-white px-4 py-2.5 rounded-lg shadow-sm">
                   <BookOpen className="w-5 h-5 text-amber-400 no-print" />
                   <h4 className="font-extrabold text-sm uppercase tracking-wider">
@@ -474,7 +475,7 @@ export default function PanitiaIntervention() {
                   </h4>
                 </div>
 
-                <div className="overflow-x-auto">
+                <div className="overflow-x-auto print:overflow-visible">
                   <table className="w-full border-collapse border border-slate-900 text-xs text-slate-900 bg-white">
                     <thead>
                       <tr className="bg-slate-100 border-b border-slate-900 font-bold uppercase text-slate-900">
@@ -569,24 +570,31 @@ export default function PanitiaIntervention() {
         </div>
 
         {/* Print Signoff Footer */}
-        <div className="pt-12 mt-12 border-t border-slate-400 grid grid-cols-2 gap-8 text-center text-xs font-bold text-slate-900">
-          <div className="space-y-16">
-            <p>Disediakan Oleh:</p>
-            <div>
-              <p className="border-b border-slate-900 inline-block px-12 pb-1 uppercase font-black">
-                ( KETUA PANITIA {selectedPanitia.replace('PANITIA ', '')} )
+        <div 
+          className="pt-12 mt-12 border-t-2 border-slate-900 grid grid-cols-2 gap-8 text-center text-xs font-bold text-slate-900 break-inside-avoid"
+          style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}
+        >
+          <div className="space-y-12">
+            <p className="uppercase tracking-wider font-extrabold">Disediakan Oleh:</p>
+            <div className="pt-10 space-y-1">
+              <div className="border-b-2 border-slate-900 mx-auto w-64 pb-1"></div>
+              <p className="uppercase font-black text-xs text-slate-900 pt-1">
+                ( KETUA PANITIA {selectedPanitia.replace(/^PANITIA\s+/i, '')} )
               </p>
-              <p className="text-[10px] text-slate-500 mt-1 font-normal">Ketua Panitia Mata Pelajaran</p>
+              <p className="text-[11px] text-slate-600 font-semibold">Ketua Panitia Mata Pelajaran</p>
+              <p className="text-[10px] text-slate-500 font-normal pt-1">Tarikh: ....................................</p>
             </div>
           </div>
 
-          <div className="space-y-16">
-            <p>Disahkan Oleh:</p>
-            <div>
-              <p className="border-b border-slate-900 inline-block px-12 pb-1 uppercase font-black">
+          <div className="space-y-12">
+            <p className="uppercase tracking-wider font-extrabold">Disahkan Oleh:</p>
+            <div className="pt-10 space-y-1">
+              <div className="border-b-2 border-slate-900 mx-auto w-64 pb-1"></div>
+              <p className="uppercase font-black text-xs text-slate-900 pt-1">
                 ( GURU BESAR / PK PENTADBIRAN )
               </p>
-              <p className="text-[10px] text-slate-500 mt-1 font-normal">Pengurusan Pentadbiran Sekolah</p>
+              <p className="text-[11px] text-slate-600 font-semibold">Pengurusan Pentadbiran Sekolah</p>
+              <p className="text-[10px] text-slate-500 font-normal pt-1">Tarikh: ....................................</p>
             </div>
           </div>
         </div>

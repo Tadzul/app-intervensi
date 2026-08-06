@@ -35,43 +35,81 @@ body {
 @media print {
   @page {
     size: A4 landscape;
-    margin: 15mm;
+    margin: 10mm;
   }
+  
+  /* Reset overflow and height constraints so browser print engine renders all pages without cutting off */
+  html, body, #root, main, div {
+    overflow: visible !important;
+    height: auto !important;
+    max-height: none !important;
+  }
+
   body {
     background-color: white !important;
+    color: black !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
+
   .no-print {
     display: none !important;
   }
+
   .print-only {
     display: block !important;
   }
+
   .print-area {
     padding: 0 !important;
     margin: 0 !important;
     width: 100% !important;
+    box-shadow: none !important;
+    border: none !important;
+    background: white !important;
   }
+
   .print-page-break {
-    page-break-after: always;
+    page-break-after: auto;
   }
+
+  .break-inside-avoid {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  .overflow-x-auto, .overflow-auto, .overflow-hidden {
+    overflow: visible !important;
+  }
+
   table {
     page-break-inside: auto;
     width: 100% !important;
+    border-collapse: collapse !important;
   }
-  tr, td, th {
-    page-break-inside: avoid;
-    break-inside: avoid;
+
+  tr {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
   }
+
+  td, th {
+    word-break: break-word;
+  }
+
   thead {
     display: table-header-group;
   }
-  /* Remove layout sidebar from print */
-  aside {
+
+  tfoot {
+    display: table-footer-group;
+  }
+
+  /* Remove layout sidebar, header and footer from print */
+  aside, header, footer {
     display: none !important;
   }
-  header {
-    display: none !important;
-  }
+
   main {
     margin: 0 !important;
     padding: 0 !important;
