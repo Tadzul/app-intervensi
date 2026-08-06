@@ -21,6 +21,11 @@ export default function PanitiaIntervention() {
   // Filter interventions based on selected Panitia, PBD session, Year, and Search Query
   const filteredInterventions = useMemo(() => {
     return interventions.filter(inv => {
+      // Must have valid class and subject
+      if (!inv || !inv.kelas || !inv.kelas.trim() || !inv.mataPelajaran || !inv.mataPelajaran.trim()) {
+        return false;
+      }
+
       // Panitia Match
       if (!matchesPanitia(inv.mataPelajaran, selectedPanitia)) {
         return false;

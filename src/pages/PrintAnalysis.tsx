@@ -8,10 +8,17 @@ export default function PrintAnalysis() {
   const [selectedTeacherId, setSelectedTeacherId] = useState('');
   const [filterPbdType, setFilterPbdType] = useState('');
 
-  // 1. Filter interventions by PBD type
+  // 1. Filter interventions by PBD type and validity
   const visibleInterventions = useMemo(() => {
-    if (!filterPbdType) return interventions;
-    return interventions.filter(i => i.pbdType === filterPbdType);
+    return interventions.filter(i => {
+      if (!i || !i.kelas || !i.kelas.trim() || !i.mataPelajaran || !i.mataPelajaran.trim()) {
+        return false;
+      }
+      if (filterPbdType && i.pbdType !== filterPbdType) {
+        return false;
+      }
+      return true;
+    });
   }, [interventions, filterPbdType]);
 
   // 2. Group ALL interventions dynamically by teacher
@@ -226,6 +233,36 @@ export default function PrintAnalysis() {
                   );
                 })}
               </table>
+
+              {/* Signoff Footer */}
+              <div 
+                className="pt-8 mt-6 border-t border-black grid grid-cols-2 gap-8 text-center text-xs font-bold text-black break-inside-avoid"
+                style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}
+              >
+                <div className="space-y-6">
+                  <p className="uppercase tracking-wider font-extrabold">Disediakan Oleh:</p>
+                  <div className="pt-6 space-y-1">
+                    <div className="border-b border-black mx-auto w-56 pb-1"></div>
+                    <p className="uppercase font-black text-xs text-black pt-1">
+                      ( {group.teacherName} )
+                    </p>
+                    <p className="text-[11px] text-slate-700 font-semibold">Guru Mata Pelajaran</p>
+                    <p className="text-[10px] text-slate-600 font-normal pt-1">Tarikh: ....................................</p>
+                  </div>
+                </div>
+
+                <div className="space-y-6">
+                  <p className="uppercase tracking-wider font-extrabold">Disahkan Oleh:</p>
+                  <div className="pt-6 space-y-1">
+                    <div className="border-b border-black mx-auto w-56 pb-1"></div>
+                    <p className="uppercase font-black text-xs text-black pt-1">
+                      ( GURU BESAR / PK PENTADBIRAN )
+                    </p>
+                    <p className="text-[11px] text-slate-700 font-semibold">Pengurusan Pentadbiran Sekolah</p>
+                    <p className="text-[10px] text-slate-600 font-normal pt-1">Tarikh: ....................................</p>
+                  </div>
+                </div>
+              </div>
             </div>
           );
         })}

@@ -249,7 +249,7 @@ export async function loadInitialData(onProgress?: (progress: number, message: s
       mataPelajaran: String(mataPelajaran),
       pbdType: pbdVal
     };
-  }).filter(s => s.teacherId !== '' || s.kelas !== '');
+  }).filter(s => s.kelas.trim() !== '' && s.mataPelajaran.trim() !== '');
 
   // Decode array fields and normalize Interventions
   const interventionsData: Intervention[] = interventionsRaw.map((inter: any, index: number) => {
@@ -313,7 +313,20 @@ export async function loadInitialData(onProgress?: (progress: number, message: s
       pelanIntervensiLain: String(pelanIntervensiLain),
       catatan: String(catatan)
     };
-  }).filter(inv => inv.kelas !== '' || inv.mataPelajaran !== '' || inv.teacherId !== '' || inv.isu !== '' || inv.pelanIntervensi !== '');
+  }).filter(inv => {
+    if (!inv) return false;
+    const cleanKelas = (inv.kelas || '').trim();
+    const cleanMp = (inv.mataPelajaran || '').trim();
+    if (!cleanKelas || !cleanMp) return false;
+
+    const totalStudents = (inv.tp1 || 0) + (inv.tp2 || 0) + (inv.tp3 || 0) + (inv.tp4 || 0) + (inv.tp5 || 0) + (inv.tp6 || 0);
+    const hasDetails = (inv.isu && inv.isu.trim() !== '') ||
+                       (inv.pelanIntervensi && inv.pelanIntervensi.trim() !== '') ||
+                       (inv.tajukBelumDikuasai && inv.tajukBelumDikuasai.trim() !== '') ||
+                       (inv.punca && Array.isArray(inv.punca) && inv.punca.length > 0) ||
+                       totalStudents > 0;
+    return hasDetails;
+  });
 
   // Decode PBD data
   const pbdData = pbdRaw.map((pbd: any, index: number) => {

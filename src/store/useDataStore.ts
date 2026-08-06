@@ -109,78 +109,13 @@ export const useDataStoreValue = () => {
       });
 
       setData(prev => {
-        // Smart merge / dedup for teachers
-        const teachersMap = new Map<string, Teacher>();
-        remoteData.teachers.forEach(t => {
-          if (t && t.name) teachersMap.set(t.name.toLowerCase().trim(), t);
-        });
-        (prev.teachers || []).forEach(t => {
-          if (t && t.name && !teachersMap.has(t.name.toLowerCase().trim())) {
-            teachersMap.set(t.name.toLowerCase().trim(), t);
-          }
-        });
-
-        // Smart merge / dedup for subjects
-        const subjectsMap = new Map<string, TeacherSubject>();
-        remoteData.subjects.forEach(s => {
-          const key = `${s.teacherId}_${s.kelas}_${s.mataPelajaran}_${s.pbdType}`;
-          subjectsMap.set(key, s);
-        });
-        (prev.subjects || []).forEach(s => {
-          const key = `${s.teacherId}_${s.kelas}_${s.mataPelajaran}_${s.pbdType}`;
-          if (!subjectsMap.has(key)) {
-            subjectsMap.set(key, s);
-          }
-        });
-
-        // Smart merge / dedup for interventions
-        const interventionsMap = new Map<string, Intervention>();
-        
-        // Primary: Remote database items
-        remoteData.interventions.forEach(i => {
-          if (i && i.id) {
-            interventionsMap.set(String(i.id), i);
-          }
-        });
-
-        // Secondary: Local unsynced items
-        (prev.interventions || []).forEach(i => {
-          if (!i || !i.id) return;
-          const strId = String(i.id);
-          // Check if already in remote by ID or by composite key
-          const existsById = interventionsMap.has(strId);
-          const existsByKey = Array.from(interventionsMap.values()).some(
-            remoteInv => 
-              remoteInv.kelas === i.kelas && 
-              remoteInv.mataPelajaran === i.mataPelajaran && 
-              remoteInv.pbdType === i.pbdType && 
-              (remoteInv.teacherId === i.teacherId || remoteInv.id === i.id)
-          );
-
-          if (!existsById && !existsByKey) {
-            interventionsMap.set(strId, i);
-          }
-        });
-
-        // Smart merge / dedup for studentsPBD
-        const pbdMap = new Map<string, StudentPBD>();
-        remoteData.studentsPBD.forEach(p => {
-          const key = `${p.pbdType}_${p.kelas}_${p.nama}`;
-          pbdMap.set(key, p);
-        });
-        (prev.studentsPBD || []).forEach(p => {
-          const key = `${p.pbdType}_${p.kelas}_${p.nama}`;
-          if (!pbdMap.has(key)) {
-            pbdMap.set(key, p);
-          }
-        });
-
+        // Update store with latest database state directly to remain 100% in sync with Google Sheets
         return {
           ...prev,
-          teachers: Array.from(teachersMap.values()),
-          subjects: Array.from(subjectsMap.values()),
-          interventions: Array.from(interventionsMap.values()),
-          studentsPBD: Array.from(pbdMap.values())
+          teachers: remoteData.teachers,
+          subjects: remoteData.subjects,
+          interventions: remoteData.interventions,
+          studentsPBD: remoteData.studentsPBD
         };
       });
       setLastSyncTime(new Date().toLocaleTimeString('ms-MY', { hour: '2-digit', minute: '2-digit' }));
